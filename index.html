@@ -1,5 +1,123 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>Raio-X Fundos PF</title>
-<style>body{margin:0;font-family:system-ui,sans-serif;background:#0f1b2d;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center}p{color:#c9d3e0}</style>
-</head><body><main><h1>Raio-X Fundos PF</h1><p>Em breve.</p></main></body></html>
+<meta name="description" content="Fundos com dinheiro de pessoas físicas: patrimônio, captação, rentabilidade e comparação com indicadores, só com dados públicos. Produzido por HB Escola de Negócios e AF3.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<div id="faixa-teste" class="faixa-teste" role="status" hidden>EM DESENVOLVIMENTO · versão de teste com dados não finais · não use para decisões</div>
+<header class="topo">
+  <div class="cont topo-linha">
+    <div>
+      <div class="marca">Raio-X Fundos PF</div>
+      <div class="sub">Fundos com dinheiro de pessoas físicas · dados públicos da CVM</div>
+    </div>
+    <div class="topo-dir">
+      <div class="produzido">
+        <span>Produzido por</span>
+        <a href="https://hbescoladenegocios.com/" class="logo-claro"><img src="assets/logo-hb.png" alt="HB Escola de Negócios"></a>
+        <a href="https://af3.com.br/"><img src="assets/logo-af3.png" alt="AF3"></a>
+      </div>
+      <label class="data-base">Data-base (mês fechado)
+        <select id="sel-mes" aria-label="Data-base"></select>
+      </label>
+    </div>
+  </div>
+</header>
+
+<main class="cont">
+  <div id="aviso-previa" class="aviso" hidden>Prévia interna: este mês ainda não foi liberado para publicação.</div>
+
+  <div class="filtros">
+    <div class="grupo-botoes" role="group" aria-label="Classe" id="botoes-classe"></div>
+    <div class="segmentado" role="group" aria-label="Período" id="botoes-periodo"></div>
+  </div>
+
+  <section id="leitura" class="cartao leitura" hidden>
+    <div class="rotulo azul">LEITURA DO MÊS</div>
+    <h2 id="leitura-manchete" class="manchete"></h2>
+    <ul id="leitura-bullets"></ul>
+    <div id="leitura-assinatura" class="nota"></div>
+  </section>
+
+  <section class="bloco">
+    <div class="rotulo" id="rent-rotulo"></div>
+    <h2 class="titulo" id="rent-manchete"></h2>
+    <div class="cards" id="cards"></div>
+    <div class="nota"><a href="#indicadores">Ver todos os indicadores</a></div>
+  </section>
+
+  <div class="duas-colunas">
+    <section class="cartao larga">
+      <div class="rotulo" id="rank-rotulo"></div>
+      <h2 class="titulo" id="rank-manchete"></h2>
+      <div class="abas" role="tablist" aria-label="Ranking" id="abas-ranking"></div>
+      <div class="rolagem"><table class="tabela" id="tab-ranking"></table></div>
+    </section>
+
+    <section class="cartao estreita">
+      <div class="rotulo" id="comp-rotulo"></div>
+      <h2 class="titulo" id="comp-manchete"></h2>
+      <div class="abas" role="tablist" aria-label="Comparação" id="abas-comp"></div>
+      <div id="barras"></div>
+      <table class="tabela compacta" id="tab-comp"></table>
+    </section>
+  </div>
+
+  <section class="cartao" id="indicadores">
+    <div class="rotulo">TODOS OS INDICADORES</div>
+    <h2 class="titulo">Variação no mês, no ano e em 12 meses</h2>
+    <div class="rolagem"><table class="tabela" id="tab-indicadores"></table></div>
+    <div class="nota">Variações calculadas pela equipe a partir das fontes indicadas; números-índice não são reproduzidos.</div>
+  </section>
+
+  <section class="cartao" id="resumo">
+    <div class="rotulo">UNIVERSO DO MÊS</div>
+    <p id="resumo-texto" class="texto"></p>
+    <div class="nota" id="downloads"></div>
+  </section>
+
+  <section class="cartao" id="quem-somos">
+    <div class="rotulo azul">QUEM SOMOS</div>
+    <h2 class="titulo">O Raio-X Fundos PF é produzido pela HB Escola de Negócios e pela AF3</h2>
+    <div class="instituicoes">
+      <div class="instituicao">
+        <a href="https://hbescoladenegocios.com/"><img src="assets/logo-hb.png" alt="HB Escola de Negócios" class="logo-grande"></a>
+        <p>Escola de negócios que produz e divulga conhecimento sobre investimentos, com cursos ao vivo e a distância, capacitações in company e mentorias. Foco em fundos, securitização (FIDC, Fiagro, FII) e estruturação no mercado de capitais, para profissionais do mercado financeiro.</p>
+        <a href="https://hbescoladenegocios.com/">hbescoladenegocios.com</a>
+      </div>
+      <div class="instituicao">
+        <a href="https://af3.com.br/" class="fundo-escuro"><img src="assets/logo-af3.png" alt="AF3" class="logo-medio"></a>
+        <p>Consultoria que ajuda instituições do mercado de capitais a estruturar, automatizar e escalar suas operações: arquitetura de sistemas, governança regulatória (CVM e ANBIMA), automação de processos e inteligência de dados.</p>
+        <a href="https://af3.com.br/">af3.com.br</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cartao" id="metodologia">
+    <div class="rotulo">NOTA METODOLÓGICA</div>
+    <div class="texto metodologia">
+      <p><b>Universo.</b> Fundos de Renda Fixa, Ações e Multimercado abertos e em funcionamento, não exclusivos, não destinados só a investidores profissionais e não previdenciários, com pelo menos 12 meses de Informe Diário, PL de R$ 10 milhões ou mais, 100 cotistas ou mais e PL médio por cotista de até R$ 500 mil. O universo é recalculado a cada mês. A classe Renda Fixa – Baixa Duração reúne os fundos de Renda Fixa classificados pela ANBIMA como Duração Baixa (Crédito Livre, Grau de Investimento ou Soberano) ou Renda Fixa Simples.</p>
+      <p><b>Períodos.</b> Data-base é o último dia útil do mês. Mês: desde o último dia útil do mês anterior. Ano: desde o último dia útil do ano anterior. 12 meses: desde o último dia útil do mesmo mês do ano anterior.</p>
+      <p><b>Cálculos.</b> Rentabilidade pela variação da cota. Captação líquida = aplicações − resgates no período. Volatilidade anualizada (desvio-padrão dos retornos diários × √252). A rentabilidade de cada classe é a média simples dos fundos, sem ponderar pelo patrimônio. Cotistas são posições, não pessoas. Fundos sem cota no início ou no fim do período ficam fora dos rankings daquele período. A cota publicada pela CVM não é ajustada por amortizações.</p>
+      <p><b>Fontes.</b> Fundos: CVM (cadastro, Informe Diário e Perfil Mensal). CDI e dólar: Banco Central. Ibovespa e ISE: B3. IMA, IDA e IHFA: ANBIMA. S&amp;P 500: S&amp;P Dow Jones Indices, via FRED. Nasdaq e cripto (Nasdaq Crypto Index): Nasdaq. Euro Stoxx 50 e Shanghai Composite: STOXX e SSE, via Yahoo Finance. Ouro: NAV do SPDR Gold Shares (GLD), State Street. As variações dos índices são calculadas pela equipe a partir das fontes; os números-índice não são reproduzidos. Os índices ANBIMA são usados como referência de mercado, e a ANBIMA não se responsabiliza pelo seu uso.</p>
+      <p><b>Aviso.</b> Conteúdo informativo. Não é recomendação de investimento. Rentabilidade passada não garante rentabilidade futura.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="cont rodape">
+  <span id="rodape-gerado"></span> · Produzido por HB Escola de Negócios e AF3 · Não é recomendação de investimento.
+</footer>
+
+<div id="dica" class="dica" role="tooltip" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>
