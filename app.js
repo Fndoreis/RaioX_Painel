@@ -152,7 +152,8 @@
   function visaoGeral() {
     const per = est.periodo, g = geral(), cdi = ind("cdi"), poup = ind("poupanca");
     $("geral-rotulo").textContent = "TODOS OS FUNDOS DO PAINEL · " + ROT_PER[per];
-    let auto = `${inteiro(g.n_fundos)} fundos com ${reais(g.pl)} de patrimônio; média de ${pct(g.rent_media)} ${NOME_PER[per]}`;
+    let auto = `${inteiro(g.n_fundos)} fundos com ${reais(g.pl)} de patrimônio; o fundo típico rendeu ${pct(g.rent_mediana)} ${NOME_PER[per]}` +
+      ` e o real aplicado, ${pct(g.rent_ponderada)}`;
     if (cdi && cdi[per] != null) auto += `, contra ${pct(cdi[per])} do CDI`;
     $("geral-manchete").textContent = auto;
     const cards = limpar($("geral-cards"));
@@ -160,12 +161,17 @@
       el("div", { class: "valor", text: reais(g.pl) }),
       el("div", { class: "det", text: `${inteiro(g.n_fundos)} fundos · ${inteiro(g.cotistas)} posições de cotistas` })));
     cards.append(cardSimples("Captação líquida " + NOME_PER[per], reais(g.capliq), "aplicações − resgates"));
-    cards.append(cardSimples("Rentabilidade média", pct(g.rent_media), `mediana ${pct(g.rent_mediana)} · ${inteiro(g.n_com_rent)} fundos`));
-    cards.append(cardSimples("Média ponderada pelo PL", pct(g.rent_ponderada), "peso de cada fundo = seu patrimônio"));
+    cards.append(cardSimples("Rentabilidade mediana", pct(g.rent_mediana), `fundo típico · ${inteiro(g.n_com_rent)} fundos com rentabilidade`));
+    cards.append(cardSimples("Média ponderada pelo PL", pct(g.rent_ponderada), "retorno do real aplicado"));
     if (cdi) cards.append(cardSimples("CDI", pct(cdi[per]), cdi.fonte));
     if (poup) cards.append(cardSimples("Poupança", pct(poup[per]), poup.fonte));
 
     tabelaResumo(g);
+    const semRent = g.n_fundos - g.n_com_rent;
+    $("nota-sobrevivencia").textContent = semRent > 0
+      ? `${inteiro(semRent)} dos ${inteiro(g.n_fundos)} fundos do universo não têm rentabilidade ${NOME_PER[per]} (não existiam no início do período ou não têm cota nas datas)` +
+        `${per === "36M" ? ": em 36 meses, só entram fundos com 3 anos ou mais" : ""}. Fundos encerrados no caminho não aparecem (viés de sobrevivência).`
+      : "";
     distribuicao(g);
     superaram();
     quartis();
@@ -174,8 +180,8 @@
 
   function tabelaResumo(g) {
     const tab = limpar($("tab-resumo"));
-    tab.style.minWidth = "820px";
-    cabecalho(tab, ["Classe", "Fundos", "Patrimônio", "% do PL", "Captação líq.", "Média", "Mediana", "Ponderada", "Desvio padrão", "Vol. média"]);
+    tab.style.minWidth = "960px";
+    cabecalho(tab, ["Classe", "Fundos", "Patrimônio", "% do PL", "Captação líq.", "Mediana", "Ponderada", "Média simples", "Desvio padrão", "Vol. mediana", "Drawdown mediano"]);
     const tb = el("tbody");
     for (const cl of CLASSES) {
       const t = blocoDe(cl).total || {};
@@ -183,11 +189,12 @@
       nome.onclick = () => irPara("classe", cl);
       tb.append(el("tr", {}, el("td", {}, el("span", { class: "ponto", style: `background:${CORES[cl]}` }), nome),
         tdNum(t.n_fundos, inteiro), tdNum(t.pl, reais), tdNum(g.pl ? (100 * t.pl) / g.pl : null, (x) => pct(x, 1)),
-        tdNum(t.capliq, reais), tdNum(t.rent_media, pct, "forte"), tdNum(t.rent_mediana), tdNum(t.rent_ponderada),
-        tdNum(t.rent_desvio, (x) => (x == null ? "—" : nf(2).format(x) + " p.p.")), tdNum(t.vol_media)));
+        tdNum(t.capliq, reais), tdNum(t.rent_mediana, pct, "forte"), tdNum(t.rent_ponderada), tdNum(t.rent_media),
+        tdNum(t.rent_desvio, (x) => (x == null ? "—" : nf(2).format(x) + " p.p.")), tdNum(t.vol_mediana), tdNum(t.drawdown_mediana)));
     }
     tb.append(el("tr", { class: "total" }, td("Total"), tdNum(g.n_fundos, inteiro), tdNum(g.pl, reais), td("100%", "num"),
-      tdNum(g.capliq, reais), tdNum(g.rent_media, pct, "forte"), tdNum(g.rent_mediana), tdNum(g.rent_ponderada), td("—", "num"), td("—", "num")));
+      tdNum(g.capliq, reais), tdNum(g.rent_mediana, pct, "forte"), tdNum(g.rent_ponderada), el("td", { class: "num", text: "—", title: "Média simples entre classes diferentes não é mostrada" }),
+      td("—", "num"), td("—", "num"), td("—", "num")));
     tab.append(tb);
   }
 
@@ -251,7 +258,7 @@
       const t = blocoDe(cl).total || {};
       tb.append(el("tr", {}, td(cl), tdNum(t.mediana_q1), tdNum(t.quartil_p25, pct, "limite"), tdNum(t.mediana_q2),
         tdNum(t.quartil_p50, pct, "limite"), tdNum(t.mediana_q3), tdNum(t.quartil_p75, pct, "limite"), tdNum(t.mediana_q4),
-        tdNum(t.rent_media, pct, "forte"), tdNum(t.rent_desvio, (x) => (x == null ? "—" : nf(2).format(x) + " p.p."))));
+        tdNum(t.rent_media), tdNum(t.rent_desvio, (x) => (x == null ? "—" : nf(2).format(x) + " p.p."))));
     }
     tab.append(tb);
   }
@@ -281,15 +288,16 @@
   function rentabilidade() {
     const t = bloco().total || {}, per = est.periodo, cdi = ind("cdi"), ibov = ind("ibovespa");
     $("rent-rotulo").textContent = `${est.classe} · RENTABILIDADE ${ROT_PER[per]}`;
-    let auto = `${est.classe}: média de ${pct(t.rent_media)} ${NOME_PER[per]}`;
-    if (cdi && cdi[per] != null) auto += `, ${t.rent_media >= cdi[per] ? "acima" : "abaixo"} dos ${pct(cdi[per])} do CDI`;
-    if (ibov && ibov[per] != null) auto += ` e ${t.rent_media >= ibov[per] ? "acima" : "abaixo"} dos ${pct(ibov[per])} do Ibovespa`;
+    const md = t.rent_mediana;
+    let auto = `${est.classe}: o fundo típico rendeu ${pct(md)} ${NOME_PER[per]}`;
+    if (cdi && cdi[per] != null && md != null) auto += `, ${md >= cdi[per] ? "acima" : "abaixo"} dos ${pct(cdi[per])} do CDI`;
+    if (ibov && ibov[per] != null && md != null) auto += ` e ${md >= ibov[per] ? "acima" : "abaixo"} dos ${pct(ibov[per])} do Ibovespa`;
     $("rent-manchete").textContent = manchete("rentabilidade", auto);
 
     const cards = limpar($("cards"));
-    cards.append(el("div", { class: "card escuro" }, el("div", { class: "nome", text: est.classe + " (média)" }),
-      el("div", { class: "valor", text: pct(t.rent_media) }),
-      el("div", { class: "det", text: `${inteiro(t.n_com_rent)} fundos · mediana ${pct(t.rent_mediana)}` })));
+    cards.append(el("div", { class: "card escuro" }, el("div", { class: "nome", text: est.classe + " (mediana)" }),
+      el("div", { class: "valor", text: pct(md) }),
+      el("div", { class: "det", text: `${inteiro(t.n_com_rent)} fundos · ponderada ${pct(t.rent_ponderada)} · média ${pct(t.rent_media)}` })));
     const ids = ["cdi", "poupanca", ...est.dados.classes[est.classe].destaques, "ptax"];
     for (const id of ids) {
       const i = ind(id);
@@ -300,9 +308,9 @@
         el("div", { class: "det", text: i.fonte }));
       const comp = (bloco().comparacoes || {})[id];
       const auto2 = [];
-      if (v != null && t.rent_media != null) {
-        const dif = t.rent_media - v;
-        auto2.push(`${est.classe}: média ${pct(t.rent_media)}, ${nf(2).format(Math.abs(dif))} p.p. ${dif >= 0 ? "acima" : "abaixo"} de ${i.nome}.`);
+      if (v != null && md != null) {
+        const dif = md - v;
+        auto2.push(`${est.classe}: mediana ${pct(md)}, ${nf(2).format(Math.abs(dif))} p.p. ${dif >= 0 ? "acima" : "abaixo"} de ${i.nome}.`);
       }
       if (comp && comp.acima) auto2.push(`${inteiro(comp.acima.n_fundos)} de ${inteiro(t.n_com_rent)} fundos com rentabilidade igual ou maior.`);
       const linhas = comentarios(id, auto2);
@@ -312,10 +320,11 @@
       cards.append(card);
     }
     const e = limpar($("estatisticas"));
-    for (const [rot, v] of [["Média ponderada pelo PL", pct(t.rent_ponderada)],
+    for (const [rot, v] of [["Média ponderada pelo PL", pct(t.rent_ponderada)], ["Média simples", pct(t.rent_media)],
                             ["Desvio padrão entre os fundos", t.rent_desvio == null ? "—" : nf(2).format(t.rent_desvio) + " p.p."],
                             ["25% piores até", pct(t.quartil_p25)], ["Mediana", pct(t.quartil_p50)], ["25% melhores a partir de", pct(t.quartil_p75)],
-                            ["Volatilidade média", pct(t.vol_media)], ["Patrimônio", reais(t.pl)], ["Captação líquida", reais(t.capliq)]])
+                            ["Volatilidade mediana", pct(t.vol_mediana)], ["Drawdown mediano", pct(t.drawdown_mediana)],
+                            ["Patrimônio", reais(t.pl)], ["Captação líquida", reais(t.capliq)]])
       e.append(el("div", {}, el("span", { class: "nota", text: rot }), el("b", { text: v })));
   }
 
@@ -372,6 +381,49 @@
     tab.append(tb);
   }
 
+  function gestores() {
+    const per = est.periodo, g = bloco().gestores || {};
+    $("gest-rotulo").textContent = `GESTORES · ${est.classe} · ${ROT_PER[per]}`;
+    const top = (g.maiores || [])[0];
+    const conc = g.hhi == null ? "" : g.hhi < 1000 ? "pouco concentrado" : g.hhi < 1500 ? "concentração baixa a moderada"
+      : g.hhi < 2500 ? "moderadamente concentrado" : "muito concentrado";
+    $("gest-manchete").textContent = top
+      ? `${inteiro(g.n_gestores)} gestores; os 10 maiores têm ${pct(g.part_top10, 1)} do patrimônio (HHI ${inteiro(g.hhi)}, ${conc})`
+      : "Sem dados de gestores no período.";
+    const tab = limpar($("tab-gestores"));
+    cabecalho(tab, ["#", "Gestor", "Fundos", "Patrimônio", "Participação", "Captação líq."], 2);
+    const tb = el("tbody");
+    (g.maiores || []).forEach((r, j) => tb.append(el("tr", {}, td(String(j + 1)), td(r.gestor), tdNum(r.n, inteiro),
+      tdNum(r.pl, reais), tdNum(r.part, (x) => pct(x, 1), "forte"), tdNum(r.capliq, reais))));
+    tab.append(tb);
+    const c = limpar($("gest-captacao"));
+    for (const [rot, lista] of [["Mais captaram " + NOME_PER[per], g.mais_captaram || []], ["Mais resgates " + NOME_PER[per], g.mais_resgates || []]]) {
+      c.append(el("div", { class: "grupo-titulo", text: rot }));
+      const t = el("table", { class: "tabela compacta" }), b = el("tbody");
+      for (const r of lista) b.append(el("tr", {}, td(r.gestor), tdNum(r.capliq, reais, "forte")));
+      t.append(b);
+      c.append(t);
+    }
+  }
+
+  function subtipos() {
+    const per = est.periodo, lista = bloco().subtipos || [];
+    $("sub-rotulo").textContent = `${est.classe} POR CLASSIFICAÇÃO ANBIMA · ${ROT_PER[per]}`;
+    const comRent = lista.filter((r) => r.rent_mediana != null && r.n_com_rent >= 5);
+    const ord = [...comRent].sort((a, b) => b.rent_mediana - a.rent_mediana);
+    $("sub-manchete").textContent = ord.length > 1
+      ? `${ord[0].subtipo} tem a maior mediana (${pct(ord[0].rent_mediana)}); ${ord[ord.length - 1].subtipo}, a menor (${pct(ord[ord.length - 1].rent_mediana)})`
+      : `${lista.length} tipo(s) de classificação ANBIMA nesta classe`;
+    const tab = limpar($("tab-subtipos"));
+    tab.style.minWidth = "820px";
+    cabecalho(tab, ["Classificação ANBIMA", "Fundos", "Patrimônio", "Captação líq.", "Mediana", "Ponderada", "Vol. mediana", "Drawdown mediano"]);
+    const tb = el("tbody");
+    for (const r of lista)
+      tb.append(el("tr", {}, td(r.subtipo), tdNum(r.n, inteiro), tdNum(r.pl, reais), tdNum(r.capliq, reais),
+        tdNum(r.rent_mediana, pct, "forte"), tdNum(r.rent_ponderada), tdNum(r.vol_mediana), tdNum(r.drawdown_mediana)));
+    tab.append(tb);
+  }
+
   // =====================================================================
   // RISCO × RETORNO
   // =====================================================================
@@ -415,9 +467,12 @@
     pts.forEach((p, j) => { const x = lvol(p.v); if (p.r < r0 || p.r > r1 || x < x0 || x > x1) fora.add(j); });
     return fora;
   }
+  // no Mês e no Ano o eixo x usa a volatilidade de 12 meses: ~21 dias de cota são dominados por um único pregão
+  const perVol = (per) => (per === "MES" || per === "ANO" ? "12M" : per);
   function pontos(lista, cl, per) {
-    return lista.filter((f) => f.k === cl && f.p[per] && f.p[per][0] != null && f.p[per][1] != null)
-                .map((f) => ({ f, r: f.p[per][0], v: f.p[per][1] }));
+    const pv = perVol(per);
+    return lista.filter((f) => f.k === cl && f.p[per] && f.p[per][0] != null && f.p[pv] && f.p[pv][1] != null)
+                .map((f) => ({ f, r: f.p[per][0], v: f.p[pv][1] }));
   }
   function resumoPts(pts) {
     if (!pts.length) return {};
@@ -504,7 +559,7 @@
       svg.append(sv("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", class: "marca" },
         (v === 0.01 ? "≤ " : "") + pct(v, v < 0.1 ? 2 : v < 1 ? 1 : 0)));
     }
-    svg.append(sv("text", { x: (m.e + W - m.d) / 2, y: H - 4, "text-anchor": "middle", class: "titulo-eixo" }, "Volatilidade anualizada (escala logarítmica)"));
+    svg.append(sv("text", { x: (m.e + W - m.d) / 2, y: H - 4, "text-anchor": "middle", class: "titulo-eixo" }, (perVol(per) === per ? "Volatilidade anualizada" : "Volatilidade anualizada em 12 meses") + " (escala logarítmica)"));
     svg.append(sv("text", { x: 12, y: (m.t + H - m.b) / 2, "text-anchor": "middle", class: "titulo-eixo",
       transform: `rotate(-90 12 ${(m.t + H - m.b) / 2})` }, "Rentabilidade " + NOME_PER[per]));
     if (med != null) {
@@ -525,7 +580,8 @@
     svg.addEventListener("mouseover", (e) => {
       const j = alvoJ(e); if (j == null) return;
       const f = pts[j].f, q = f.p[per];
-      mostrarDica(e.target, f.n, [`Rentabilidade ${NOME_PER[per]}: ${pct(q[0])}`, `Volatilidade: ${pct(q[1])}`,
+      mostrarDica(e.target, f.n, [`Rentabilidade ${NOME_PER[per]}: ${pct(q[0])}`,
+        `Volatilidade${perVol(per) === per ? "" : " em 12 meses"}: ${pct(pts[j].v)}`, `Drawdown ${NOME_PER[per]}: ${pct(q[5])}`,
         `Patrimônio: ${reais(q[2])}`, `Gestor: ${f.g || "—"}`, `CNPJ: ${f.c}`].concat(fora && fora.has(j) ? ["Valor extremo (outlier)"] : []));
     });
     svg.addEventListener("mouseout", esconder);
@@ -562,7 +618,7 @@
     const fi = limpar($("ficha-fundo"));
     fi.hidden = !f;
     if (!f) return;
-    fi.append(el("div", {}, el("b", { text: f.n }), el("span", { class: "nota", text: ` · ${f.k} · ${f.g || "gestor não informado"} · CNPJ ${f.c}` })));
+    fi.append(el("div", {}, el("b", { text: f.n }), el("span", { class: "nota", text: ` · ${f.k}${f.a ? " (" + f.a + ")" : ""} · ${f.g || "gestor não informado"} · CNPJ ${f.c}` })));
     const tab = el("table", { class: "tabela compacta" });
     cabecalho(tab, ["", ...PERIODOS.map((p) => p[1])]);
     const tb = el("tbody");
@@ -571,6 +627,7 @@
     lin("Mediana da classe", (p) => ((blocoDe(f.k, p).total) || {}).rent_mediana);
     lin("CDI", (p) => (ind("cdi") || {})[p]);
     lin("Volatilidade", (p) => (f.p[p] || [])[1]);
+    lin("Drawdown", (p) => (f.p[p] || [])[5]);
     lin("Captação líquida", (p) => (f.p[p] || [])[3], reais);
     tab.append(tb);
     fi.append(el("div", { class: "rolagem" }, tab));
@@ -592,12 +649,12 @@
 
     // quadro das classes do painel (média simples dos fundos), como no topo do painel antigo
     const tq = limpar($("tab-ind-classes"));
-    tq.append(el("thead", {}, el("tr", {}, el("th", { scope: "col", text: "Classe (média dos fundos, %)" }),
+    tq.append(el("thead", {}, el("tr", {}, el("th", { scope: "col", text: "Classe (mediana dos fundos, %)" }),
       ...PERIODOS.map(([p, n]) => el("th", { class: "num" + (p === per ? " atual" : ""), scope: "col", text: n })))));
     const tbq = el("tbody");
     for (const cl of CLASSES)
       tbq.append(el("tr", {}, el("td", {}, el("span", { class: "ponto", style: `background:${CORES[cl]}` }), cl),
-        ...PERIODOS.map(([p]) => tdNum((blocoDe(cl, p).total || {}).rent_media, num, p === per ? "atual" : ""))));
+        ...PERIODOS.map(([p]) => tdNum((blocoDe(cl, p).total || {}).rent_mediana, num, p === per ? "atual" : ""))));
     tq.append(tbq);
 
     const alvo = limpar($("ind-grupos"));
@@ -648,7 +705,7 @@
   function destaqueExemplo() {
     const d = est.dados, gm = geral("MES"), ga = geral("ANO"), cdi = ind("cdi") || {}, ibov = ind("ibovespa") || {};
     const tot = (cl, p) => blocoDe(cl, p).total || {};
-    const porRent = [...CLASSES].sort((a, b) => (tot(b, "ANO").rent_media ?? -1e9) - (tot(a, "ANO").rent_media ?? -1e9));
+    const porRent = [...CLASSES].sort((a, b) => (tot(b, "ANO").rent_mediana ?? -1e9) - (tot(a, "ANO").rent_mediana ?? -1e9));
     const porCap = [...CLASSES].sort((a, b) => (tot(b, "MES").capliq ?? 0) - (tot(a, "MES").capliq ?? 0));
     const acimaCdi = CLASSES.map((cl) => {
       const c = (blocoDe(cl, "ANO").comparacoes || {}).cdi || {}, a = (c.acima || {}).n_fundos || 0, n = a + ((c.abaixo || {}).n_fundos || 0);
@@ -658,9 +715,9 @@
     const p = [
       `Em ${nomeMes(d.mes)}, os ${inteiro(gm.n_fundos)} fundos abertos às pessoas físicas acompanhados pelo painel somavam ${reais(gm.pl)} de patrimônio. ` +
       `A captação líquida foi de ${reais(gm.capliq)} no mês e de ${reais(ga.capliq)} no acumulado do ano.`,
-      `No ano, a rentabilidade média dos fundos foi de ${pct(ga.rent_media)} (mediana de ${pct(ga.rent_mediana)}), contra ${pct(cdi.ANO)} do CDI ` +
-      `e ${pct(ibov.ANO)} do Ibovespa. ${porRent[0]} lidera entre as classes, com média de ${pct(tot(porRent[0], "ANO").rent_media)}; ` +
-      `${porRent[3]} tem a menor média, ${pct(tot(porRent[3], "ANO").rent_media)}.`,
+      `No ano, o fundo típico (mediana) rendeu ${pct(ga.rent_mediana)} e o real aplicado nos fundos (média ponderada pelo patrimônio) ` +
+      `${pct(ga.rent_ponderada)}, contra ${pct(cdi.ANO)} do CDI e ${pct(ibov.ANO)} do Ibovespa. ${porRent[0]} lidera entre as classes, ` +
+      `com mediana de ${pct(tot(porRent[0], "ANO").rent_mediana)}; ${porRent[3]} tem a menor, ${pct(tot(porRent[3], "ANO").rent_mediana)}.`,
       `Parcela de fundos que igualou ou superou o CDI no ano, por classe: ${acimaCdi.join("; ")}.`,
       `Na captação do mês, ${porCap[0]} recebeu mais recursos (${reais(tot(porCap[0], "MES").capliq)}), enquanto ` +
       `${porCap[3]} teve o pior saldo (${reais(tot(porCap[3], "MES").capliq)}).`,
@@ -707,7 +764,7 @@
     if (est.visao === "destaque") visaoDestaque();
     else if (est.visao === "geral") visaoGeral();
     else if (est.visao === "indicadores") visaoIndicadores();
-    else if (est.visao === "classe") { rentabilidade(); ranking(); comparacao(); }
+    else if (est.visao === "classe") { rentabilidade(); ranking(); comparacao(); gestores(); subtipos(); }
     else if (est.visao === "risco") visaoRisco();
   }
 

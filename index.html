@@ -59,7 +59,8 @@
     <section class="cartao">
       <div class="rotulo">RESUMO POR CLASSE</div>
       <div class="rolagem"><table class="tabela" id="tab-resumo"></table></div>
-      <div class="nota">Rentabilidade: média simples dos fundos (padrão do painel), mediana e média ponderada pelo patrimônio. Captação líquida no período selecionado.</div>
+      <div class="nota">Mediana: rentabilidade do fundo típico (metade dos fundos rendeu mais, metade menos); é o número principal do painel. Ponderada: média pelo patrimônio, ou seja, o retorno do real aplicado. Média simples: puxada pelos valores extremos. Drawdown: maior queda da cota a partir de um pico, no período.</div>
+      <div class="nota" id="nota-sobrevivencia"></div>
     </section>
     <div class="duas-colunas">
       <section class="cartao estreita">
@@ -111,6 +112,25 @@
         <table class="tabela compacta" id="tab-comp"></table>
       </section>
     </div>
+    <div class="duas-colunas">
+      <section class="cartao larga">
+        <div class="rotulo" id="gest-rotulo"></div>
+        <h2 class="titulo" id="gest-manchete"></h2>
+        <div class="rolagem"><table class="tabela" id="tab-gestores"></table></div>
+        <div class="nota">Participação no patrimônio dos fundos da classe no universo do painel. Concentração (HHI): soma dos quadrados das participações, de 0 a 10.000; acima de 1.500 indica mercado moderadamente concentrado. FICs e seus fundos principais são somados como estão.</div>
+      </section>
+      <section class="cartao estreita">
+        <div class="rotulo">CAPTAÇÃO POR GESTOR</div>
+        <div id="gest-captacao"></div>
+      </section>
+    </div>
+
+    <section class="cartao">
+      <div class="rotulo" id="sub-rotulo"></div>
+      <h2 class="titulo" id="sub-manchete"></h2>
+      <div class="rolagem"><table class="tabela" id="tab-subtipos"></table></div>
+      <div class="nota">Classificação ANBIMA informada no cadastro da CVM. Fundos sem classificação aparecem separados.</div>
+    </section>
   </div>
 
   <!-- ===== Risco × retorno ===== -->
@@ -192,8 +212,9 @@
     <div class="texto metodologia">
       <p><b>Universo.</b> Fundos de Renda Fixa, Ações e Multimercado abertos e em funcionamento, não exclusivos, não destinados só a investidores profissionais e não previdenciários, com pelo menos 12 meses de Informe Diário, PL de R$ 10 milhões ou mais, 100 cotistas ou mais e PL médio por cotista de até R$ 500 mil. O universo é recalculado a cada mês. A classe Renda Fixa – Baixa Duração reúne os fundos de Renda Fixa classificados pela ANBIMA como Duração Baixa (Crédito Livre, Grau de Investimento ou Soberano) ou Renda Fixa Simples.</p>
       <p><b>Períodos.</b> Data-base é o último dia útil do mês. Mês: desde o último dia útil do mês anterior. Ano: desde o último dia útil do ano anterior. 12 e 36 meses: desde o último dia útil do mesmo mês, 1 e 3 anos antes.</p>
-      <p><b>Cálculos.</b> Rentabilidade pela variação da cota. Poupança: rendimento acumulado dos depósitos com aniversário no dia 1º (Banco Central). Valores extremos (outliers) no gráfico de risco × retorno: fundos cuja rentabilidade ou volatilidade (esta em escala logarítmica) fica a mais de 3 vezes a distância entre o 1º e o 3º quartil, abaixo do 1º quartil ou acima do 3º, por classe e período; o gráfico é mostrado com e sem eles, e os fundos retirados continuam em todas as médias, medianas e rankings. Captação líquida = aplicações − resgates no período. Volatilidade anualizada (desvio-padrão dos retornos diários × √252). A rentabilidade de cada classe é a média simples dos fundos, sem ponderar pelo patrimônio. Cotistas são posições, não pessoas. Fundos sem cota no início ou no fim do período ficam fora dos rankings daquele período. A cota publicada pela CVM não é ajustada por amortizações.</p>
+      <p><b>Cálculos.</b> Rentabilidade pela variação da cota. Poupança: rendimento acumulado dos depósitos com aniversário no dia 1º (Banco Central). Valores extremos (outliers) no gráfico de risco × retorno: fundos cuja rentabilidade ou volatilidade (esta em escala logarítmica) fica a mais de 3 vezes a distância entre o 1º e o 3º quartil, abaixo do 1º quartil ou acima do 3º, por classe e período; o gráfico é mostrado com e sem eles, e os fundos retirados continuam em todas as médias, medianas e rankings. Captação líquida = aplicações − resgates no período. Volatilidade anualizada (desvio-padrão dos retornos diários × √252). A rentabilidade principal de cada classe é a mediana dos fundos; também são mostradas a média ponderada pelo patrimônio e a média simples. Cotistas são posições, não pessoas. Fundos sem cota no início ou no fim do período ficam fora dos rankings daquele período. Drawdown: maior queda da cota em relação ao pico anterior, dentro do período. No gráfico de risco × retorno, para o mês e o ano o eixo de volatilidade usa a volatilidade de 12 meses, porque poucos dias de cota não medem bem o risco. A cota publicada pela CVM não é ajustada por amortizações.</p>
       <p><b>Fontes.</b> Fundos: CVM (cadastro, Informe Diário e Perfil Mensal). CDI, Poupança e dólar: Banco Central. Ibovespa e ISE: B3. IMA, IDA e IHFA: ANBIMA. S&amp;P 500: S&amp;P Dow Jones Indices, via FRED. Nasdaq e cripto (Nasdaq Crypto Index): Nasdaq. Euro Stoxx 50 e Shanghai Composite: STOXX e SSE, via Yahoo Finance. Ouro: NAV do SPDR Gold Shares (GLD), State Street. As variações dos índices são calculadas pela equipe a partir das fontes; os números-índice não são reproduzidos. Os índices ANBIMA são usados como referência de mercado, e a ANBIMA não se responsabiliza pelo seu uso.</p>
+      <p><b>Universo de hoje (viés de sobrevivência).</b> Todos os números consideram os fundos que estão no universo na data-base. Fundos encerrados, incorporados ou que ficaram abaixo dos cortes no caminho não entram, e eles costumam ter resultados piores. Em 36 meses, fundos com menos de 3 anos ficam sem rentabilidade. As cotas são líquidas de taxas e brutas de imposto de renda; a Poupança é isenta.</p>
       <p><b>Aviso.</b> Conteúdo informativo. Não é recomendação de investimento. Rentabilidade passada não garante rentabilidade futura.</p>
     </div>
   </section>
@@ -205,6 +226,6 @@
 
 
 <div id="dica" class="dica" role="tooltip" hidden></div>
-<script src="app.js?v=3609ec004a"></script>
+<script src="app.js?v=7d25a39ff5"></script>
 </body>
 </html>
