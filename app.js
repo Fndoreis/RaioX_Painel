@@ -1,7 +1,8 @@
 /* Raio-X Fundos PF — painel público. Lê dados/meses.json e dados/<mes>.json (gerados por raiox.outputs.site). */
 (function () {
   "use strict";
-  const CLASSES = ["Ações", "Multimercados", "Renda Fixa", "RF Baixa Duração"];
+  // ordem do menos ao mais arriscado
+  const CLASSES = ["RF Baixa Duração", "Renda Fixa", "Multimercados", "Ações"];
   const PERIODOS = [["MES", "Mês"], ["ANO", "Ano"], ["12M", "12 meses"]];
   const NOME_PER = { MES: "no mês", ANO: "no ano", "12M": "em 12 meses" };
   const ROT_PER = { MES: "NO MÊS", ANO: "NO ANO", "12M": "EM 12 MESES" };
@@ -49,11 +50,17 @@
   // ---------- filtros ----------
   function botoes() {
     const bc = limpar($("botoes-classe"));
+    const dest = el("button", { type: "button", class: "botao-destaque", "aria-haspopup": "dialog", text: "Destaque" });
+    dest.onclick = abrirDestaque;
+    bc.append(dest);
     for (const c of CLASSES) {
       const b = el("button", { type: "button", "aria-pressed": String(c === est.classe), text: c });
       b.onclick = () => { est.classe = c; render(); };
       bc.append(b);
     }
+    const quem = el("button", { type: "button", class: "botao-quem", "aria-haspopup": "dialog", text: "Quem somos" });
+    quem.onclick = () => abrir($("dlg-quem"));
+    bc.append(quem);
     const bp = limpar($("botoes-periodo"));
     for (const [p, n] of PERIODOS) {
       const b = el("button", { type: "button", "aria-pressed": String(p === est.periodo), text: n });
@@ -211,6 +218,39 @@
     // modo de teste (MVP): faixa fixa de "em desenvolvimento" no lugar do aviso de prévia
     $("faixa-teste").hidden = !d.modo_teste;
     $("aviso-previa").hidden = !d.previa || !!d.modo_teste;
+  }
+
+  // ---------- janelas (Destaque e Quem somos) ----------
+  function abrir(d) {
+    esconder();
+    if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");
+  }
+  function fechar(d) {
+    if (typeof d.close === "function") d.close(); else d.removeAttribute("open");
+  }
+  document.querySelectorAll("dialog").forEach((d) => {
+    d.querySelectorAll("[data-fecha]").forEach((b) => (b.onclick = () => fechar(d)));
+    d.addEventListener("click", (e) => { if (e.target === d) fechar(d); });   // clique fora fecha
+    d.addEventListener("close", () => { if (d.id === "dlg-destaque") limpar($("destaque-video")); });  // para o vídeo
+  });
+
+  function abrirDestaque() {
+    const l = est.dados.leitura || {}, d = est.dados, data = d.data_base.split("-").reverse().join("/");
+    $("destaque-titulo").textContent = l.destaque_titulo || `A indústria de fundos até ${data}`;
+    const t = limpar($("destaque-texto"));
+    const paragrafos = (l.destaque || "").split(/\n+/).map((x) => x.trim()).filter(Boolean);
+    if (paragrafos.length) for (const p of paragrafos) t.append(el("p", { text: p }));
+    else t.append(el("p", { class: "nota", text: "O destaque deste mês está em preparação." }));
+    $("destaque-assinatura").textContent = paragrafos.length ? (l.assinatura || "") : "";
+    const v = limpar($("destaque-video"));
+    v.hidden = !d.video_id;
+    if (d.video_id) {
+      // só carrega o YouTube quando a janela abre; domínio sem cookies de rastreamento
+      v.append(el("iframe", { src: `https://www.youtube-nocookie.com/embed/${d.video_id}`, title: "Vídeo do destaque do mês",
+        loading: "lazy", allow: "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen",
+        referrerpolicy: "strict-origin-when-cross-origin", allowfullscreen: "" }));
+    }
+    abrir($("dlg-destaque"));
   }
 
   function render() {

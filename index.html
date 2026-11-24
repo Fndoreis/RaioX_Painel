@@ -22,8 +22,8 @@
     <div class="topo-dir">
       <div class="produzido">
         <span>Produzido por</span>
-        <a href="https://hbescoladenegocios.com/" class="logo-claro"><img src="assets/logo-hb.png" alt="HB Escola de Negócios"></a>
-        <a href="https://af3.com.br/"><img src="assets/logo-af3.png" alt="AF3"></a>
+        <a href="https://hbescoladenegocios.com/" target="_blank" rel="noopener" class="logo-claro"><img src="assets/logo-hb.png" alt="HB Escola de Negócios"></a>
+        <a href="https://af3.com.br/" target="_blank" rel="noopener"><img src="assets/logo-af3.png" alt="AF3"></a>
       </div>
       <label class="data-base">Data-base (mês fechado)
         <select id="sel-mes" aria-label="Data-base"></select>
@@ -84,23 +84,6 @@
     <div class="nota" id="downloads"></div>
   </section>
 
-  <section class="cartao" id="quem-somos">
-    <div class="rotulo azul">QUEM SOMOS</div>
-    <h2 class="titulo">O Raio-X Fundos PF é produzido pela HB Escola de Negócios e pela AF3</h2>
-    <div class="instituicoes">
-      <div class="instituicao">
-        <a href="https://hbescoladenegocios.com/"><img src="assets/logo-hb.png" alt="HB Escola de Negócios" class="logo-grande"></a>
-        <p>Escola de negócios que produz e divulga conhecimento sobre investimentos, com cursos ao vivo e a distância, capacitações in company e mentorias. Foco em fundos, securitização (FIDC, Fiagro, FII) e estruturação no mercado de capitais, para profissionais do mercado financeiro.</p>
-        <a href="https://hbescoladenegocios.com/">hbescoladenegocios.com</a>
-      </div>
-      <div class="instituicao">
-        <a href="https://af3.com.br/" class="fundo-escuro"><img src="assets/logo-af3.png" alt="AF3" class="logo-medio"></a>
-        <p>Consultoria que ajuda instituições do mercado de capitais a estruturar, automatizar e escalar suas operações: arquitetura de sistemas, governança regulatória (CVM e ANBIMA), automação de processos e inteligência de dados.</p>
-        <a href="https://af3.com.br/">af3.com.br</a>
-      </div>
-    </div>
-  </section>
-
   <section class="cartao" id="metodologia">
     <div class="rotulo">NOTA METODOLÓGICA</div>
     <div class="texto metodologia">
@@ -116,6 +99,45 @@
 <footer class="cont rodape">
   <span id="rodape-gerado"></span> · Produzido por HB Escola de Negócios e AF3 · Não é recomendação de investimento.
 </footer>
+
+
+<dialog id="dlg-destaque" class="janela" aria-labelledby="destaque-titulo">
+  <div class="janela-topo">
+    <div>
+      <div class="rotulo azul">DESTAQUE</div>
+      <h2 id="destaque-titulo" class="titulo"></h2>
+    </div>
+    <button type="button" class="fechar" data-fecha aria-label="Fechar">✕</button>
+  </div>
+  <div class="janela-corpo">
+    <div id="destaque-video" class="video" hidden></div>
+    <div id="destaque-texto" class="editorial"></div>
+    <div id="destaque-assinatura" class="nota"></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-quem" class="janela" aria-labelledby="quem-titulo">
+  <div class="janela-topo">
+    <div><div class="rotulo azul">QUEM SOMOS</div></div>
+    <button type="button" class="fechar" data-fecha aria-label="Fechar">✕</button>
+  </div>
+  <div class="janela-corpo">
+    <h2 class="titulo" id="quem-titulo">O Raio-X Fundos PF é produzido pela HB Escola de Negócios e pela AF3</h2>
+    <div class="instituicoes">
+      <div class="instituicao">
+        <a href="https://hbescoladenegocios.com/" target="_blank" rel="noopener"><img src="assets/logo-hb.png" alt="HB Escola de Negócios" class="logo-grande"></a>
+        <p>Escola de negócios que produz e divulga conhecimento sobre investimentos, com cursos ao vivo e a distância, capacitações in company e mentorias. Foco em fundos, securitização (FIDC, Fiagro, FII) e estruturação no mercado de capitais, para profissionais do mercado financeiro.</p>
+        <a href="https://hbescoladenegocios.com/" target="_blank" rel="noopener">hbescoladenegocios.com</a>
+      </div>
+      <div class="instituicao">
+        <a href="https://af3.com.br/" target="_blank" rel="noopener" class="fundo-escuro"><img src="assets/logo-af3.png" alt="AF3" class="logo-medio"></a>
+        <p>Consultoria que ajuda instituições do mercado de capitais a estruturar, automatizar e escalar suas operações: arquitetura de sistemas, governança regulatória (CVM e ANBIMA), automação de processos e inteligência de dados.</p>
+        <a href="https://af3.com.br/" target="_blank" rel="noopener">af3.com.br</a>
+      </div>
+    </div>
+  </div>
+
+</dialog>
 
 <div id="dica" class="dica" role="tooltip" hidden></div>
 <script src="app.js"></script>

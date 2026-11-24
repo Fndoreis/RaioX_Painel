@@ -68,3 +68,14 @@ button.card:hover,button.card:focus-visible{border-color:var(--azul);outline:non
 .dica b{display:block;margin-bottom:4px}
 .neg{color:#9b2c2c}.card.escuro .neg{color:#ffb4ab}
 .faixa-teste{position:sticky;top:0;z-index:20;background:#a3302a;color:#fff;text-align:center;font-weight:700;font-size:14px;letter-spacing:.5px;padding:10px 16px}
+.grupo-botoes .botao-destaque{background:#a35c00;border-color:#a35c00;color:#fff;font-weight:600}
+.grupo-botoes .botao-destaque:hover{background:#874c00}
+.grupo-botoes .botao-quem{border-style:dashed}
+.janela{border:none;border-radius:12px;padding:0;width:min(880px,calc(100vw - 32px));max-height:calc(100vh - 48px);color:var(--tinta);box-shadow:0 20px 60px rgba(15,27,45,.35)}
+.janela::backdrop{background:rgba(15,27,45,.55)}
+.janela-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:20px 24px 8px;position:sticky;top:0;background:#fff;border-bottom:1px solid var(--linha)}
+.janela-corpo{padding:16px 24px 24px;display:flex;flex-direction:column;gap:14px}
+.fechar{font:inherit;font-size:18px;min-width:44px;min-height:44px;border-radius:8px;border:1px solid var(--borda);background:#fff;cursor:pointer}
+.video{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.editorial p{margin:0 0 12px;font-size:16px;line-height:27px;color:var(--texto);font-family:Georgia,'Times New Roman',serif}
