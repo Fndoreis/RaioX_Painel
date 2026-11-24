@@ -1,11 +1,14 @@
 /* Raio-X Fundos PF — painel público. Lê dados/meses.json, dados/<mes>.json e, sob demanda, dados/<mes>-fundos.json
-   (gerados por raiox.outputs.site). Quatro visões: Visão geral, Por classe, Risco × retorno e Indicadores. */
+   (gerados por raiox.outputs.site). Visões: Destaque, Visão geral, Indicadores, Por classe, Risco × retorno e Quem somos. */
 (function () {
   "use strict";
   // ordem do menos ao mais arriscado
   const CLASSES = ["RF Baixa Duração", "Renda Fixa", "Multimercados", "Ações"];
-  const CORES = { "RF Baixa Duração": "#5b8fd1", "Renda Fixa": "#1f4e8c", "Multimercados": "#a35c00", "Ações": "#0f1b2d" };
-  const VISOES = [["geral", "Visão geral"], ["classe", "Por classe"], ["risco", "Risco × retorno"], ["indicadores", "Indicadores"]];
+  const CORES = { "RF Baixa Duração": "#5aa0e6", "Renda Fixa": "#1f4e8c", "Multimercados": "#d08c00", "Ações": "#2a8f62" };
+  const VISOES = [["destaque", "Destaque"], ["geral", "Visão geral"], ["indicadores", "Indicadores"], ["classe", "Por classe"],
+                  ["risco", "Risco × retorno"], ["quem", "Quem somos"]];
+  const COM_PERIODO = new Set(["geral", "indicadores", "classe", "risco"]);
+  const COM_CLASSE = new Set(["classe", "risco"]);
   const PERIODOS = [["MES", "Mês"], ["ANO", "Ano"], ["12M", "12 meses"], ["36M", "36 meses"]];
   const NOME_PER = { MES: "no mês", ANO: "no ano", "12M": "em 12 meses", "36M": "em 36 meses" };
   const ROT_PER = { MES: "NO MÊS", ANO: "NO ANO", "12M": "EM 12 MESES", "36M": "EM 36 MESES" };
@@ -14,8 +17,8 @@
   const COMPS = [["cdi", "CDI"], ["poupanca", "Poupança"], ["ibovespa", "Ibovespa"], ["ihfa", "IHFA"], ["mediana", "Mediana da classe"]];
   const PLURAL = { "Ações": "fundos de ações", "Multimercados": "multimercados", "Renda Fixa": "fundos de renda fixa",
                    "RF Baixa Duração": "fundos de RF baixa duração" };
-  const est = { dados: null, visao: "geral", classe: "Multimercados", periodo: "ANO", ranking: "maiores_rent", comp: "cdi",
-                fundos: {}, busca: null, semExtremos: true };
+  const est = { dados: null, visao: "destaque", classe: "Multimercados", periodo: "ANO", ranking: "maiores_rent", comp: "cdi",
+                fundos: {}, busca: null };
   const $ = (id) => document.getElementById(id);
 
   // ---------- formatação pt-BR ----------
@@ -80,32 +83,28 @@
     const nv = limpar($("visoes"));
     for (const [k, n] of VISOES) {
       const b = el("button", { type: "button", role: "tab", id: "aba-" + k, "aria-controls": "v-" + k,
-                               "aria-selected": String(k === est.visao), text: n });
+                               "aria-selected": String(k === est.visao), class: "aba-" + k, text: n });
       b.onclick = () => irPara(k);
       nv.append(b);
     }
     for (const [k] of VISOES) $("v-" + k).hidden = k !== est.visao;
 
+    // classe: filtra "Por classe" e "Risco × retorno"; as outras visões mostram as classes lado a lado
     const bc = limpar($("botoes-classe"));
-    const dest = el("button", { type: "button", class: "botao-destaque", "aria-haspopup": "dialog", text: "Destaque" });
-    dest.onclick = abrirDestaque;
-    bc.append(dest);
-    if (est.visao === "classe") {   // a classe só filtra a visão "Por classe"; as outras mostram todas lado a lado
-      for (const c of CLASSES) {
-        const b = el("button", { type: "button", "aria-pressed": String(c === est.classe), text: c });
-        b.onclick = () => { est.classe = c; render(); };
-        bc.append(b);
-      }
+    bc.hidden = !COM_CLASSE.has(est.visao);
+    for (const c of CLASSES) {
+      const b = el("button", { type: "button", "aria-pressed": String(c === est.classe), text: c });
+      b.onclick = () => { est.classe = c; render(); };
+      bc.append(b);
     }
-    const quem = el("button", { type: "button", class: "botao-quem", "aria-haspopup": "dialog", text: "Quem somos" });
-    quem.onclick = () => abrir($("dlg-quem"));
-    bc.append(quem);
     const bp = limpar($("botoes-periodo"));
+    bp.hidden = !COM_PERIODO.has(est.visao);
     for (const [p, n] of PERIODOS) {
       const b = el("button", { type: "button", "aria-pressed": String(p === est.periodo), text: n });
       b.onclick = () => { est.periodo = p; render(); };
       bp.append(b);
     }
+    document.querySelector(".filtros").hidden = bc.hidden && bp.hidden;
   }
 
   function abas(alvo, itens, atual, ao) {
@@ -266,7 +265,7 @@
     const tb = el("tbody");
     const linha = (nome, f, cls) => {
       const pl = f("MES").pl;
-      const antes = (p) => { const x = f(p); return x.pl != null && x.dif_pl != null ? x.pl - x.dif_pl : null; };
+      const antes = (p) => f(p).pl_d0 ?? null;   // só fundos de hoje que já existiam no início do período
       tb.append(el("tr", { class: cls || "" }, td(nome), tdNum(pl, reais, "forte"), tdNum(antes("ANO"), reais),
         tdNum(antes("12M"), reais), tdNum(antes("36M"), reais),
         ...["MES", "ANO", "12M", "36M"].map((p) => tdNum(f(p).capliq, reais))));
@@ -396,25 +395,58 @@
   }
   const normal = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+  // ---------- outliers: cercas de Tukey externas (k = 3) por eixo, volatilidade em log10 ----------
+  // Regra recomendada pela revisão estatística (reports/analise_estatistica_2026-11.md): usa quartis, então os
+  // próprios extremos não deslocam o limite; a escala log trata a volatilidade, que é limitada em zero.
+  const METODO_OUTLIER = "fundos com rentabilidade ou volatilidade (esta em escala logarítmica) a mais de 3 vezes a distância " +
+    "entre o 1º e o 3º quartil, abaixo do 1º quartil ou acima do 3º, por classe e período. Classes com menos de 30 fundos não são filtradas.";
+  const K_TUKEY = 3, N_MIN_OUTLIER = 30, PISO_VOL = 0.01;   // volatilidade em % a.a.
+  const lvol = (v) => Math.log10(Math.max(v, PISO_VOL));
+  function quantil(o, p) { const h = (o.length - 1) * p, i = Math.floor(h); return o[i] + (h - i) * ((i + 1 < o.length ? o[i + 1] : o[i]) - o[i]); }
+  function cercas(xs) {
+    const o = [...xs].sort((a, b) => a - b), q1 = quantil(o, 0.25), q3 = quantil(o, 0.75), iqr = q3 - q1;
+    return iqr > 1e-12 ? [q1 - K_TUKEY * iqr, q3 + K_TUKEY * iqr] : [-Infinity, Infinity];
+  }
+  function outliers(pts) {
+    // devolve o conjunto de índices de pts considerados valores extremos
+    const fora = new Set();
+    if (pts.length < N_MIN_OUTLIER) return fora;
+    const [r0, r1] = cercas(pts.map((p) => p.r)), [x0, x1] = cercas(pts.map((p) => lvol(p.v)));
+    pts.forEach((p, j) => { const x = lvol(p.v); if (p.r < r0 || p.r > r1 || x < x0 || x > x1) fora.add(j); });
+    return fora;
+  }
+  function pontos(lista, cl, per) {
+    return lista.filter((f) => f.k === cl && f.p[per] && f.p[per][0] != null && f.p[per][1] != null)
+                .map((f) => ({ f, r: f.p[per][0], v: f.p[per][1] }));
+  }
+  function resumoPts(pts) {
+    if (!pts.length) return {};
+    const rs = pts.map((p) => p.r).sort((a, b) => a - b), n = rs.length, m = rs.reduce((a, b) => a + b, 0) / n;
+    const med = n % 2 ? rs[(n - 1) / 2] : (rs[n / 2 - 1] + rs[n / 2]) / 2;
+    const dp = n > 1 ? Math.sqrt(rs.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1)) : null;
+    return { n, media: m, mediana: med, desvio: dp };
+  }
+
   async function visaoRisco() {
     const per = est.periodo;
-    $("risco-rotulo").textContent = "RISCO × RETORNO · " + ROT_PER[per];
+    $("risco-rotulo").textContent = `RISCO × RETORNO · ${est.classe} · ${ROT_PER[per]}`;
     const alvo = $("graficos-risco");
     let lista;
     try { lista = await carregarFundos(); } catch (e) { limpar(alvo).append(el("div", { class: "aviso", text: String(e.message || e) })); return; }
     if (est.visao !== "risco") return;
-    // busca
     const dl = $("lista-fundos");
     if (dl.dataset.mes !== est.dados.mes) {
       limpar(dl);
       for (const f of lista) dl.append(el("option", { value: `${f.n} · ${f.c}` }));
       dl.dataset.mes = est.dados.mes;
     }
-    const inp = $("busca-fundo"), chk = $("sem-extremos");
-    chk.checked = est.semExtremos;
-    chk.onchange = () => { est.semExtremos = chk.checked; desenharRisco(lista); };
-    inp.oninput = () => { est.busca = acharFundo(lista, inp.value); desenharRisco(lista); };
+    const inp = $("busca-fundo");
+    inp.oninput = () => {
+      est.busca = acharFundo(lista, inp.value);
+      if (est.busca && est.busca.k !== est.classe) { est.classe = est.busca.k; render(); } else desenharRisco(lista);
+    };
     desenharRisco(lista);
+    tabelaOutliers(lista);
   }
 
   function acharFundo(lista, q) {
@@ -435,77 +467,95 @@
   }
 
   function desenharRisco(lista) {
-    const per = est.periodo, alvo = limpar($("graficos-risco")), achado = est.busca;
+    const per = est.periodo, cl = est.classe, alvo = limpar($("graficos-risco")), achado = est.busca;
     fichaFundo(achado);
-    for (const cl of CLASSES) {
-      let pts = lista.filter((f) => f.k === cl && f.p[per] && f.p[per][0] != null && f.p[per][1] != null)
-                     .map((f) => ({ f, r: f.p[per][0], v: f.p[per][1] }));
-      const total = pts.length;
-      let escondidos = 0;
-      if (est.semExtremos && pts.length > 2) {
-        const est2 = (xs) => { const m = xs.reduce((a, b) => a + b, 0) / xs.length;
-          return [m, Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1))]; };
-        const [mr, sr] = est2(pts.map((p) => p.r)), [mv, sv2] = est2(pts.map((p) => p.v));
-        const ok = (p) => Math.abs(p.r - mr) <= 2 * sr && Math.abs(p.v - mv) <= 2 * sv2;
-        const antes = pts.length;
-        pts = pts.filter((p) => ok(p) || (achado && p.f.c === achado.c));
-        escondidos = antes - pts.length;
-      }
-      const t = blocoDe(cl).total || {}, med = t.rent_mediana;
+    const todos = pontos(lista, cl, per), fora = outliers(todos), sem = todos.filter((_, j) => !fora.has(j));
+    $("risco-manchete").textContent = todos.length
+      ? `${est.classe}: ${inteiro(todos.length)} fundos, dos quais ${inteiro(fora.size)} são valores extremos (outliers)`
+      : `${est.classe}: sem fundos com rentabilidade e volatilidade ${NOME_PER[per]}`;
+    const med = (blocoDe(cl).total || {}).rent_mediana;
+    for (const [titulo, pts, extra, marcar] of [["Com todos os fundos", todos, `${inteiro(todos.length)} fundos · outliers em vermelho-claro`, fora],
+                                                 ["Sem outliers", sem, `${inteiro(sem.length)} fundos · ${inteiro(fora.size)} retirados`, null]]) {
       const caixa = el("figure", { class: "grafico-risco" });
-      caixa.append(el("figcaption", {}, el("span", { class: "ponto", style: `background:${CORES[cl]}` }), el("b", { text: cl }),
-        el("span", { class: "nota", text: ` · ${inteiro(pts.length)} de ${inteiro(total)} fundos` +
-          (escondidos ? ` (${inteiro(escondidos)} extremos escondidos)` : "") + ` · mediana ${pct(med)}` })));
-      if (!pts.length) { caixa.append(el("div", { class: "nota", text: "Sem fundos com rentabilidade e volatilidade no período." })); alvo.append(caixa); continue; }
-      const W = 560, H = 340, m = { e: 56, d: 14, t: 12, b: 40 };
-      const rs = pts.map((p) => p.r).concat(med != null ? [med] : []), vs = pts.map((p) => p.v);
-      let [y0, y1] = [Math.min(...rs), Math.max(...rs)]; const fy = (y1 - y0) * 0.05 || 1; y0 -= fy; y1 += fy;
-      const x1 = Math.max(...vs) * 1.05 || 1;
-      const X = escala(0, x1, m.e, W - m.d), Y = escala(y0, y1, H - m.b, m.t);
-      const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", class: "dispersao",
-        "aria-label": `${cl}: ${pts.length} fundos; rentabilidade de ${pct(Math.min(...pts.map((p) => p.r)))} a ${pct(Math.max(...pts.map((p) => p.r)))}` });
-      for (const v of marcas(y0, y1)) {
-        svg.append(sv("line", { x1: m.e, x2: W - m.d, y1: Y(v), y2: Y(v), class: v === 0 ? "eixo-zero" : "grade" }));
-        svg.append(sv("text", { x: m.e - 6, y: Y(v) + 4, "text-anchor": "end", class: "marca" }, pct(v, Math.abs(v) < 10 && v % 1 ? 1 : 0)));
-      }
-      for (const v of marcas(0, x1)) {
-        svg.append(sv("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, class: "grade" }));
-        svg.append(sv("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", class: "marca" }, pct(v, v % 1 ? 1 : 0)));
-      }
-      svg.append(sv("text", { x: (m.e + W - m.d) / 2, y: H - 4, "text-anchor": "middle", class: "titulo-eixo" }, "Volatilidade anualizada"));
-      svg.append(sv("text", { x: 12, y: (m.t + H - m.b) / 2, "text-anchor": "middle", class: "titulo-eixo",
-        transform: `rotate(-90 12 ${(m.t + H - m.b) / 2})` }, "Rentabilidade " + NOME_PER[per]));
-      if (med != null) {
-        svg.append(sv("line", { x1: m.e, x2: W - m.d, y1: Y(med), y2: Y(med), class: "mediana" }));
-        svg.append(sv("text", { x: W - m.d - 4, y: Y(med) - 5, "text-anchor": "end", class: "rot-mediana" }, "mediana " + pct(med)));
-      }
-      const g = sv("g", { fill: CORES[cl], "fill-opacity": "0.45" });
-      let destaque = null;
-      pts.forEach((p, j) => {
-        if (achado && p.f.c === achado.c) { destaque = p; return; }
-        g.append(sv("circle", { cx: X(p.v).toFixed(1), cy: Y(p.r).toFixed(1), r: 3.2, "data-j": j }));
-      });
-      svg.append(g);
-      if (destaque) {
-        svg.append(sv("circle", { cx: X(destaque.v), cy: Y(destaque.r), r: 8, class: "achado", "data-j": pts.indexOf(destaque) }));
-      }
-      svg.addEventListener("mouseover", (e) => {
-        const j = e.target.getAttribute && e.target.getAttribute("data-j");
-        if (j == null) return;
-        const f = pts[+j].f, q = f.p[per];
-        mostrarDica(e.target, f.n, [`Rentabilidade ${NOME_PER[per]}: ${pct(q[0])}`, `Volatilidade: ${pct(q[1])}`,
-          `Patrimônio: ${reais(q[2])}`, `Gestor: ${f.g || "—"}`, `CNPJ: ${f.c}`]);
-      });
-      svg.addEventListener("mouseout", esconder);
-      svg.addEventListener("click", (e) => {
-        const j = e.target.getAttribute && e.target.getAttribute("data-j");
-        if (j == null) return;
-        const f = pts[+j].f;
-        $("busca-fundo").value = `${f.n} · ${f.c}`; est.busca = f; desenharRisco(lista);
-      });
-      caixa.append(svg);
+      caixa.append(el("figcaption", {}, el("b", { text: titulo }), el("span", { class: "nota", text: ` · ${extra} · mediana da classe ${pct(med)}` })));
+      if (!pts.length) { caixa.append(el("div", { class: "nota", text: "Sem fundos no período." })); alvo.append(caixa); continue; }
+      caixa.append(dispersao(pts, cl, per, med, achado, marcar, lista));
       alvo.append(caixa);
     }
+  }
+
+  function dispersao(pts, cl, per, med, achado, fora, lista) {
+    const W = 560, H = 360, m = { e: 58, d: 14, t: 14, b: 40 };
+    const rs = pts.map((p) => p.r).concat(med != null ? [med] : []), vs = pts.map((p) => p.v);
+    let [y0, y1] = [Math.min(...rs), Math.max(...rs)]; const fy = (y1 - y0) * 0.05 || 1; y0 -= fy; y1 += fy;
+    // eixo x em escala log (0,01% a 100%+): a RF Baixa Duração fica perto de zero e Ações perto de 30%
+    const lx = vs.map(lvol), lx0 = Math.floor(Math.min(...lx) * 2) / 2, lx1 = Math.max(Math.ceil(Math.max(...lx) * 2) / 2, lx0 + 1);
+    const Xl = escala(lx0, lx1, m.e, W - m.d), X = (v) => Xl(lvol(v)), Y = escala(y0, y1, H - m.b, m.t);
+    const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", class: "dispersao",
+      "aria-label": `${cl}: ${pts.length} fundos; rentabilidade de ${pct(Math.min(...pts.map((p) => p.r)))} a ${pct(Math.max(...pts.map((p) => p.r)))}` });
+    const my = marcas(y0, y1), mx = [0.01, 0.1, 1, 10, 100, 1000].filter((v) => Math.log10(v) >= lx0 - 1e-9 && Math.log10(v) <= lx1 + 1e-9);
+    const casas = (lista2) => (lista2.length > 1 && lista2[1] - lista2[0] < 1 ? 1 : 0);
+    for (const v of my) {
+      svg.append(sv("line", { x1: m.e, x2: W - m.d, y1: Y(v), y2: Y(v), class: v === 0 ? "eixo-zero" : "grade" }));
+      svg.append(sv("text", { x: m.e - 6, y: Y(v) + 4, "text-anchor": "end", class: "marca" }, pct(v, casas(my))));
+    }
+    for (const v of mx) {
+      svg.append(sv("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, class: "grade" }));
+      svg.append(sv("text", { x: X(v), y: H - m.b + 16, "text-anchor": "middle", class: "marca" },
+        (v === 0.01 ? "≤ " : "") + pct(v, v < 0.1 ? 2 : v < 1 ? 1 : 0)));
+    }
+    svg.append(sv("text", { x: (m.e + W - m.d) / 2, y: H - 4, "text-anchor": "middle", class: "titulo-eixo" }, "Volatilidade anualizada (escala logarítmica)"));
+    svg.append(sv("text", { x: 12, y: (m.t + H - m.b) / 2, "text-anchor": "middle", class: "titulo-eixo",
+      transform: `rotate(-90 12 ${(m.t + H - m.b) / 2})` }, "Rentabilidade " + NOME_PER[per]));
+    if (med != null) {
+      svg.append(sv("line", { x1: m.e, x2: W - m.d, y1: Y(med), y2: Y(med), class: "mediana" }));
+      svg.append(sv("text", { x: W - m.d - 4, y: Y(med) - 5, "text-anchor": "end", class: "rot-mediana" }, "mediana " + pct(med)));
+    }
+    const g = sv("g", { fill: CORES[cl], "fill-opacity": "0.45" });
+    const gx = sv("g", { class: "outlier" });
+    let destaque = null;
+    pts.forEach((p, j) => {
+      if (achado && p.f.c === achado.c) { destaque = j; return; }
+      const c = sv("circle", { cx: X(p.v).toFixed(1), cy: Y(p.r).toFixed(1), r: 3.2, "data-j": j });
+      (fora && fora.has(j) ? gx : g).append(c);
+    });
+    svg.append(g, gx);
+    if (destaque != null) svg.append(sv("circle", { cx: X(pts[destaque].v), cy: Y(pts[destaque].r), r: 8, class: "achado", "data-j": destaque }));
+    const alvoJ = (e) => { const j = e.target.getAttribute && e.target.getAttribute("data-j"); return j == null ? null : +j; };
+    svg.addEventListener("mouseover", (e) => {
+      const j = alvoJ(e); if (j == null) return;
+      const f = pts[j].f, q = f.p[per];
+      mostrarDica(e.target, f.n, [`Rentabilidade ${NOME_PER[per]}: ${pct(q[0])}`, `Volatilidade: ${pct(q[1])}`,
+        `Patrimônio: ${reais(q[2])}`, `Gestor: ${f.g || "—"}`, `CNPJ: ${f.c}`].concat(fora && fora.has(j) ? ["Valor extremo (outlier)"] : []));
+    });
+    svg.addEventListener("mouseout", esconder);
+    svg.addEventListener("click", (e) => {
+      const j = alvoJ(e); if (j == null) return;
+      $("busca-fundo").value = `${pts[j].f.n} · ${pts[j].f.c}`; est.busca = pts[j].f; desenharRisco(lista);
+    });
+    return svg;
+  }
+
+  function tabelaOutliers(lista) {
+    const per = est.periodo, tab = limpar($("tab-outliers"));
+    tab.style.minWidth = "860px";
+    tab.append(el("thead", {},
+      el("tr", {}, el("th", { scope: "col", text: "" }), el("th", { class: "grupo-col", colspan: "4", scope: "colgroup", text: "Com todos os fundos" }),
+        el("th", { class: "grupo-col", colspan: "4", scope: "colgroup", text: "Sem outliers" }), el("th", { scope: "col", text: "" })),
+      el("tr", {}, ...["Classe", "Fundos", "Média", "Mediana", "Desvio padrão", "Fundos", "Média", "Mediana", "Desvio padrão", "Outliers"]
+        .map((c, j) => el("th", { class: j ? "num" : "", scope: "col", text: c })))));
+    const tb = el("tbody");
+    const dp = (x) => (x == null ? "—" : nf(2).format(x) + " p.p.");
+    for (const cl of CLASSES) {
+      const todos = pontos(lista, cl, per), fora = outliers(todos), sem = todos.filter((_, j) => !fora.has(j));
+      const a = resumoPts(todos), b = resumoPts(sem);
+      tb.append(el("tr", { class: cl === est.classe ? "selecionada" : "" }, td(cl), tdNum(a.n, inteiro), tdNum(a.media, pct, "forte"),
+        tdNum(a.mediana), tdNum(a.desvio, dp), tdNum(b.n, inteiro), tdNum(b.media, pct, "forte"), tdNum(b.mediana), tdNum(b.desvio, dp),
+        td(a.n ? `${inteiro(fora.size)} (${pct((100 * fora.size) / a.n, 1)})` : "—", "num")));
+    }
+    tab.append(tb);
+    $("nota-outliers").textContent = "Critério de outlier: " + METODO_OUTLIER +
+      " Esta tabela considera só os fundos com rentabilidade e volatilidade no período.";
   }
 
   function fichaFundo(f) {
@@ -529,7 +579,7 @@
   }
 
   // =====================================================================
-  // INDICADORES
+  // INDICADORES (cartões no estilo do painel antigo: nome + minitabela por período)
   // =====================================================================
   function visaoIndicadores() {
     const per = est.periodo, lista = est.dados.indicadores.filter((i) => i[per] != null);
@@ -538,54 +588,37 @@
       const ord = [...lista].sort((a, b) => b[per] - a[per]), top = ord[0], fim = ord[ord.length - 1];
       $("ind-manchete").textContent = `${top.nome} lidera ${NOME_PER[per]} (${pct(top[per])}); ${fim.nome} fica na lanterna (${pct(fim[per])})`;
     } else $("ind-manchete").textContent = "Sem indicadores para o período.";
+    const num = (x) => (x == null ? "—" : nf(2).format(x).replace("-", "−"));
 
-    // gráfico de barras agrupado
-    const gr = limpar($("grafico-indicadores"));
-    const grupos = (est.dados.grupos_indicadores || []).map((g) => [g, est.dados.indicadores.filter((i) => i.grupo === g)]);
-    const fundosRef = CLASSES.map((cl) => ({ nome: cl + " (média dos fundos)", v: (blocoDe(cl).total || {}).rent_media, fundo: true, cor: CORES[cl] }));
-    const todos = grupos.flatMap(([, is]) => is.map((i) => i[per])).concat(fundosRef.map((f) => f.v)).filter((v) => v != null);
-    const mn = Math.min(0, ...todos), mx = Math.max(0, ...todos), amp = mx - mn || 1;
-    const zero = (100 * -mn) / amp;
-    const linhaBarra = (nome, v, cls, titulo) => {
-      const w = v == null ? 0 : (100 * Math.abs(v)) / amp, esq = v == null || v >= 0 ? zero : zero - w;
-      const trilho = el("div", { class: "trilho" });
-      const b = el("div", { class: "b " + cls }); b.style.left = esq + "%"; b.style.width = w + "%";
-      const z = el("div", { class: "zero" }); z.style.left = zero + "%";
-      trilho.append(z, b);
-      return el("div", { class: "linha-barra", title: titulo || nome }, el("span", { class: "nome", text: nome }), trilho,
-        el("span", { class: "val" + (v < 0 ? " neg" : ""), text: pct(v) }));
-    };
-    for (const [g, is] of grupos) {
-      if (!is.length) continue;
-      gr.append(el("div", { class: "grupo-titulo", text: g }));
-      for (const i of [...is].sort((a, b) => (b[per] ?? -1e9) - (a[per] ?? -1e9))) gr.append(linhaBarra(i.nome, i[per], "mercado", i.fonte));
-    }
-    gr.append(el("div", { class: "grupo-titulo", text: "Fundos do painel" }));
-    for (const f of fundosRef) gr.append(linhaBarra(f.nome, f.v, "fundos"));
-
-    // tabela com os quatro períodos
-    const tab = limpar($("tab-indicadores"));
-    tab.style.minWidth = "720px";
-    tab.append(el("thead", {}, el("tr", {}, el("th", { scope: "col", text: "Indicador" }),
-      ...PERIODOS.map(([p, n]) => el("th", { class: "num" + (p === per ? " atual" : ""), scope: "col", text: n })),
-      el("th", { scope: "col", text: "Fonte" }))));
-    const tb = el("tbody");
-    for (const [g, is] of grupos) {
-      if (!is.length) continue;
-      tb.append(el("tr", { class: "grupo" }, el("th", { scope: "rowgroup", colspan: String(PERIODOS.length + 2), text: g })));
-      for (const i of is)
-        tb.append(el("tr", {}, td(i.nome), ...PERIODOS.map(([p]) => tdNum(i[p], pct, p === per ? "atual" : "")), td(i.fonte, "nota")));
-    }
-    const outros = est.dados.indicadores.filter((i) => !(est.dados.grupos_indicadores || []).includes(i.grupo));
-    if (outros.length) {
-      tb.append(el("tr", { class: "grupo" }, el("th", { scope: "rowgroup", colspan: String(PERIODOS.length + 2), text: "Outros" })));
-      for (const i of outros) tb.append(el("tr", {}, td(i.nome), ...PERIODOS.map(([p]) => tdNum(i[p], pct, p === per ? "atual" : "")), td(i.fonte, "nota")));
-    }
-    tb.append(el("tr", { class: "grupo" }, el("th", { scope: "rowgroup", colspan: String(PERIODOS.length + 2), text: "Fundos do painel (média simples)" })));
+    // quadro das classes do painel (média simples dos fundos), como no topo do painel antigo
+    const tq = limpar($("tab-ind-classes"));
+    tq.append(el("thead", {}, el("tr", {}, el("th", { scope: "col", text: "Classe (média dos fundos, %)" }),
+      ...PERIODOS.map(([p, n]) => el("th", { class: "num" + (p === per ? " atual" : ""), scope: "col", text: n })))));
+    const tbq = el("tbody");
     for (const cl of CLASSES)
-      tb.append(el("tr", {}, td(cl), ...PERIODOS.map(([p]) => tdNum((blocoDe(cl, p).total || {}).rent_media, pct, p === per ? "atual" : "")),
-        td("CVM, Informe Diário", "nota")));
-    tab.append(tb);
+      tbq.append(el("tr", {}, el("td", {}, el("span", { class: "ponto", style: `background:${CORES[cl]}` }), cl),
+        ...PERIODOS.map(([p]) => tdNum((blocoDe(cl, p).total || {}).rent_media, num, p === per ? "atual" : ""))));
+    tq.append(tbq);
+
+    const alvo = limpar($("ind-grupos"));
+    const nomesGrupos = est.dados.grupos_indicadores || [];
+    const grupos = nomesGrupos.map((g) => [g, est.dados.indicadores.filter((i) => i.grupo === g)]);
+    const outros = est.dados.indicadores.filter((i) => !nomesGrupos.includes(i.grupo));
+    if (outros.length) grupos.push(["Outros", outros]);
+    for (const [g, is] of grupos) {
+      if (!is.length) continue;
+      const sec = el("section", { class: "ind-grupo" }, el("h3", { class: "grupo-titulo", text: g }));
+      const grade = el("div", { class: "ind-grade" });
+      for (const i of is) {
+        const t = el("table", { class: "mini-tab" });
+        t.append(el("thead", {}, el("tr", {}, ...PERIODOS.map(([p, n]) => el("th", { scope: "col", class: p === per ? "atual" : "", text: n })))));
+        t.append(el("tbody", {}, el("tr", {}, ...PERIODOS.map(([p]) => el("td", { class: (i[p] < 0 ? "neg " : "") + (p === per ? "atual" : ""), text: num(i[p]) })))));
+        grade.append(el("div", { class: "ind-card" }, el("div", { class: "ind-nome", text: i.nome }), t,
+          el("div", { class: "ind-fonte", text: i.fonte })));
+      }
+      sec.append(grade);
+      alvo.append(sec);
+    }
   }
 
   // ---------- rodapé do mês ----------
@@ -604,46 +637,78 @@
     $("aviso-previa").hidden = !d.previa || !!d.modo_teste;
   }
 
-  // ---------- janelas (Destaque e Quem somos) ----------
-  function abrir(d) {
-    esconder();
-    if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");
-  }
-  function fechar(d) {
-    if (typeof d.close === "function") d.close(); else d.removeAttribute("open");
-  }
-  document.querySelectorAll("dialog").forEach((d) => {
-    d.querySelectorAll("[data-fecha]").forEach((b) => (b.onclick = () => fechar(d)));
-    d.addEventListener("click", (e) => { if (e.target === d) fechar(d); });   // clique fora fecha
-    d.addEventListener("close", () => { if (d.id === "dlg-destaque") limpar($("destaque-video")); });  // para o vídeo
-  });
+  // =====================================================================
+  // DESTAQUE
+  // =====================================================================
+  const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro",
+                 "novembro", "dezembro"];
+  const nomeMes = (s) => { const [a, m] = s.split("-"); return `${MESES[+m - 1]} de ${a}`; };
 
-  function abrirDestaque() {
+  // texto de exemplo montado com os números do mês, usado enquanto os autores não enviam o destaque
+  function destaqueExemplo() {
+    const d = est.dados, gm = geral("MES"), ga = geral("ANO"), cdi = ind("cdi") || {}, ibov = ind("ibovespa") || {};
+    const tot = (cl, p) => blocoDe(cl, p).total || {};
+    const porRent = [...CLASSES].sort((a, b) => (tot(b, "ANO").rent_media ?? -1e9) - (tot(a, "ANO").rent_media ?? -1e9));
+    const porCap = [...CLASSES].sort((a, b) => (tot(b, "MES").capliq ?? 0) - (tot(a, "MES").capliq ?? 0));
+    const acimaCdi = CLASSES.map((cl) => {
+      const c = (blocoDe(cl, "ANO").comparacoes || {}).cdi || {}, a = (c.acima || {}).n_fundos || 0, n = a + ((c.abaixo || {}).n_fundos || 0);
+      return `${cl} ${pct(n ? (100 * a) / n : null, 0)}`;
+    });
+    const im = d.indicadores.filter((i) => i.MES != null).sort((a, b) => b.MES - a.MES);
+    const p = [
+      `Em ${nomeMes(d.mes)}, os ${inteiro(gm.n_fundos)} fundos abertos às pessoas físicas acompanhados pelo painel somavam ${reais(gm.pl)} de patrimônio. ` +
+      `A captação líquida foi de ${reais(gm.capliq)} no mês e de ${reais(ga.capliq)} no acumulado do ano.`,
+      `No ano, a rentabilidade média dos fundos foi de ${pct(ga.rent_media)} (mediana de ${pct(ga.rent_mediana)}), contra ${pct(cdi.ANO)} do CDI ` +
+      `e ${pct(ibov.ANO)} do Ibovespa. ${porRent[0]} lidera entre as classes, com média de ${pct(tot(porRent[0], "ANO").rent_media)}; ` +
+      `${porRent[3]} tem a menor média, ${pct(tot(porRent[3], "ANO").rent_media)}.`,
+      `Parcela de fundos que igualou ou superou o CDI no ano, por classe: ${acimaCdi.join("; ")}.`,
+      `Na captação do mês, ${porCap[0]} recebeu mais recursos (${reais(tot(porCap[0], "MES").capliq)}), enquanto ` +
+      `${porCap[3]} teve o pior saldo (${reais(tot(porCap[3], "MES").capliq)}).`,
+    ];
+    if (im.length) p.push(`Entre os indicadores de mercado, ${im[0].nome} teve a maior alta no mês (${pct(im[0].MES)}) e ` +
+      `${im[im.length - 1].nome} o pior resultado (${pct(im[im.length - 1].MES)}).`);
+    return { titulo: `Fundos para pessoas físicas: o que mudou em ${nomeMes(d.mes)}`, paragrafos: p };
+  }
+
+  function visaoDestaque() {
     const l = est.dados.leitura || {}, d = est.dados;
-    $("destaque-titulo").textContent = l.destaque_titulo || `A indústria de fundos até ${data(d.data_base)}`;
+    const autores = (l.destaque || "").split(/\n+/).map((x) => x.trim()).filter(Boolean);
+    const ex = autores.length ? null : destaqueExemplo();
+    $("destaque-titulo").textContent = autores.length ? (l.destaque_titulo || `A indústria de fundos em ${nomeMes(d.mes)}`) : ex.titulo;
     const t = limpar($("destaque-texto"));
-    const paragrafos = (l.destaque || "").split(/\n+/).map((x) => x.trim()).filter(Boolean);
-    if (paragrafos.length) for (const p of paragrafos) t.append(el("p", { text: p }));
-    else t.append(el("p", { class: "nota", text: "O destaque deste mês está em preparação." }));
-    $("destaque-assinatura").textContent = paragrafos.length ? (l.assinatura || "") : "";
-    const v = limpar($("destaque-video"));
-    v.hidden = !d.video_id;
-    if (d.video_id) {
-      // só carrega o YouTube quando a janela abre; domínio sem cookies de rastreamento
-      v.append(el("iframe", { src: `https://www.youtube-nocookie.com/embed/${d.video_id}`, title: "Vídeo do destaque do mês",
-        loading: "lazy", allow: "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen",
-        referrerpolicy: "strict-origin-when-cross-origin", allowfullscreen: "" }));
+    if (ex) t.append(el("div", { class: "selo-exemplo", text: "Texto de exemplo, montado automaticamente com os números do mês. Será substituído pela análise dos autores." }));
+    for (const p of autores.length ? autores : ex.paragrafos) t.append(el("p", { text: p }));
+    $("destaque-assinatura").textContent = autores.length ? (l.assinatura || "") : "";
+    const v = $("destaque-video"), atual = v.dataset.video || "";
+    if (atual !== (d.video_id || "-")) {
+      limpar(v);
+      v.dataset.video = d.video_id || "-";
+      if (d.video_id) {
+        // domínio do YouTube sem cookies de rastreamento
+        // o YouTube (~1 MB) só é carregado quando a pessoa clica em assistir; domínio sem cookies de rastreamento
+        const capa = el("button", { type: "button", class: "video-capa", "aria-label": "Assistir ao vídeo do destaque" },
+          el("div", { class: "play", "aria-hidden": "true", text: "▶" }), el("div", { text: "Assistir ao vídeo do mês" }));
+        capa.onclick = () => limpar(v).append(el("iframe", { src: `https://www.youtube-nocookie.com/embed/${d.video_id}?autoplay=1`,
+          title: "Vídeo do destaque do mês", allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen",
+          referrerpolicy: "strict-origin-when-cross-origin", allowfullscreen: "" }));
+        v.append(capa);
+      } else {
+        v.append(el("div", { class: "video-vazio" }, el("div", { class: "play", "aria-hidden": "true", text: "▶" }),
+          el("div", { text: "Espaço do vídeo do mês" })));
+      }
     }
-    abrir($("dlg-destaque"));
+    $("destaque-video-nota").textContent = d.video_id ? "Vídeo do destaque do mês (YouTube)."
+      : "O vídeo aparece aqui quando o link do YouTube é enviado no formulário da Leitura do mês.";
   }
 
   function render() {
     esconder();
     botoes(); leitura(); resumo();
-    if (est.visao === "geral") visaoGeral();
+    if (est.visao === "destaque") visaoDestaque();
+    else if (est.visao === "geral") visaoGeral();
+    else if (est.visao === "indicadores") visaoIndicadores();
     else if (est.visao === "classe") { rentabilidade(); ranking(); comparacao(); }
     else if (est.visao === "risco") visaoRisco();
-    else visaoIndicadores();
   }
 
   async function carregar(mes) {

@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Raio-X Fundos PF</title>
-<meta name="description" content="Fundos com dinheiro de pessoas físicas: patrimônio, captação, rentabilidade e comparação com indicadores, só com dados públicos. Produzido por HB Escola de Negócios e AF3.">
+<meta name="description" content="Fundos abertos para aplicação das pessoas físicas: patrimônio, captação, rentabilidade e comparação com indicadores, só com dados públicos. Produzido por HB Escola de Negócios e AF3.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=e8f151e82a">
+<link rel="stylesheet" href="estilo.css?v=f7b2d26c2a">
 </head>
 <body>
 <div id="faixa-teste" class="faixa-teste" role="status" hidden>EM DESENVOLVIMENTO · versão de teste com dados não finais · não use para decisões</div>
@@ -17,7 +17,7 @@
   <div class="cont topo-linha">
     <div>
       <div class="marca">Raio-X Fundos PF</div>
-      <div class="sub">Fundos com dinheiro de pessoas físicas · dados públicos da CVM</div>
+      <div class="sub">Fundos abertos para aplicação das pessoas físicas · dados públicos da CVM</div>
     </div>
     <div class="topo-dir">
       <div class="produzido">
@@ -82,7 +82,7 @@
       <div class="rotulo">EVOLUÇÃO DO PATRIMÔNIO E DA CAPTAÇÃO</div>
       <h2 class="titulo">Patrimônio dos fundos do universo atual e dinheiro que entrou ou saiu</h2>
       <div class="rolagem"><table class="tabela" id="tab-evolucao"></table></div>
-      <div class="nota">Patrimônio em cada data considera os fundos que estão no universo hoje. Captação líquida = aplicações − resgates no período.</div>
+      <div class="nota">Patrimônio em cada data: só os fundos que estão no universo hoje e já existiam naquela data (fundos lançados depois não entram; fundos encerrados no caminho também não). Não é o patrimônio de toda a indústria na data. Captação líquida = aplicações − resgates no período, dos fundos de hoje.</div>
     </section>
   </div>
 
@@ -117,17 +117,18 @@
   <div id="v-risco" class="visao" role="tabpanel" aria-labelledby="aba-risco" hidden>
     <section class="cartao">
       <div class="rotulo" id="risco-rotulo"></div>
-      <h2 class="titulo">Risco × retorno: cada ponto é um fundo</h2>
+      <h2 class="titulo" id="risco-manchete">Risco × retorno: cada ponto é um fundo</h2>
       <div class="risco-controles">
         <label class="busca">Buscar fundo (nome ou CNPJ)
           <input id="busca-fundo" type="search" list="lista-fundos" autocomplete="off" placeholder="Ex.: Trend Ouro ou 22963439000152">
           <datalist id="lista-fundos"></datalist>
         </label>
-        <label class="marcar"><input id="sem-extremos" type="checkbox" checked> Esconder valores extremos (rentabilidade ou volatilidade a mais de 2 desvios padrão da média da classe)</label>
       </div>
       <div id="ficha-fundo" class="ficha" hidden></div>
       <div id="graficos-risco" class="graficos-risco"></div>
-      <div class="nota">Eixo horizontal: volatilidade anualizada. Eixo vertical: rentabilidade no período. Linha tracejada: mediana da rentabilidade da classe. Passe o mouse sobre um ponto para ver o fundo.</div>
+      <div class="rolagem"><table class="tabela" id="tab-outliers"></table></div>
+      <div class="nota" id="nota-outliers"></div>
+      <div class="nota">Eixo horizontal: volatilidade anualizada. Eixo vertical: rentabilidade no período. Linha tracejada: mediana da rentabilidade da classe. Passe o mouse sobre um ponto para ver o fundo; clique para abrir a ficha.</div>
     </section>
   </div>
 
@@ -136,14 +137,47 @@
     <section class="cartao" id="indicadores">
       <div class="rotulo" id="ind-rotulo"></div>
       <h2 class="titulo" id="ind-manchete"></h2>
-      <div id="grafico-indicadores" class="grafico-barras"></div>
-      <div class="nota">Barras azuis: indicadores de mercado. Barras laranja: média dos fundos de cada classe do painel, para comparação. Bolsas internacionais, ouro (GLD) e cripto (NCI) em dólar ou na moeda local do índice, sem conversão para reais.</div>
+      <div class="ind-topo">
+        <table class="tabela quadro-classes" id="tab-ind-classes"></table>
+      </div>
+      <div id="ind-grupos"></div>
+      <div class="nota">Variação em %, calculada pela equipe a partir das fontes indicadas; números-índice não são reproduzidos. Bolsas internacionais, ouro (GLD) e cripto (NCI) na moeda do próprio índice. A coluna destacada é o período selecionado.</div>
     </section>
+  </div>
+
+  <!-- ===== Destaque ===== -->
+  <div id="v-destaque" class="visao" role="tabpanel" aria-labelledby="aba-destaque" hidden>
+    <section class="cartao destaque">
+      <div class="rotulo azul">DESTAQUE DO MÊS</div>
+      <h2 id="destaque-titulo" class="manchete"></h2>
+      <div class="destaque-corpo">
+        <div id="destaque-texto" class="editorial"></div>
+        <div class="destaque-lado">
+          <div id="destaque-video" class="video"></div>
+          <div id="destaque-video-nota" class="nota"></div>
+        </div>
+      </div>
+      <div id="destaque-assinatura" class="nota"></div>
+    </section>
+  </div>
+
+  <!-- ===== Quem somos ===== -->
+  <div id="v-quem" class="visao" role="tabpanel" aria-labelledby="aba-quem" hidden>
     <section class="cartao">
-      <div class="rotulo">TODOS OS INDICADORES</div>
-      <h2 class="titulo">Variação no mês, no ano, em 12 e em 36 meses</h2>
-      <div class="rolagem"><table class="tabela" id="tab-indicadores"></table></div>
-      <div class="nota">Variações calculadas pela equipe a partir das fontes indicadas; números-índice não são reproduzidos.</div>
+      <div class="rotulo azul">QUEM SOMOS</div>
+      <h2 class="titulo" id="quem-titulo">O Raio-X Fundos PF é produzido pela HB Escola de Negócios e pela AF3</h2>
+      <div class="instituicoes">
+        <div class="instituicao">
+          <a href="https://hbescoladenegocios.com/" target="_blank" rel="noopener"><img src="assets/logo-hb.png" alt="HB Escola de Negócios" class="logo-grande"></a>
+          <p>Escola de negócios que produz e divulga conhecimento sobre investimentos, com cursos ao vivo e a distância, capacitações in company e mentorias. Foco em fundos, securitização (FIDC, Fiagro, FII) e estruturação no mercado de capitais, para profissionais do mercado financeiro.</p>
+          <a href="https://hbescoladenegocios.com/" target="_blank" rel="noopener">hbescoladenegocios.com</a>
+        </div>
+        <div class="instituicao">
+          <a href="https://af3.com.br/" target="_blank" rel="noopener" class="fundo-escuro"><img src="assets/logo-af3.png" alt="AF3" class="logo-medio"></a>
+          <p>Consultoria que ajuda instituições do mercado de capitais a estruturar, automatizar e escalar suas operações: arquitetura de sistemas, governança regulatória (CVM e ANBIMA), automação de processos e inteligência de dados.</p>
+          <a href="https://af3.com.br/" target="_blank" rel="noopener">af3.com.br</a>
+        </div>
+      </div>
     </section>
   </div>
 
@@ -158,7 +192,7 @@
     <div class="texto metodologia">
       <p><b>Universo.</b> Fundos de Renda Fixa, Ações e Multimercado abertos e em funcionamento, não exclusivos, não destinados só a investidores profissionais e não previdenciários, com pelo menos 12 meses de Informe Diário, PL de R$ 10 milhões ou mais, 100 cotistas ou mais e PL médio por cotista de até R$ 500 mil. O universo é recalculado a cada mês. A classe Renda Fixa – Baixa Duração reúne os fundos de Renda Fixa classificados pela ANBIMA como Duração Baixa (Crédito Livre, Grau de Investimento ou Soberano) ou Renda Fixa Simples.</p>
       <p><b>Períodos.</b> Data-base é o último dia útil do mês. Mês: desde o último dia útil do mês anterior. Ano: desde o último dia útil do ano anterior. 12 e 36 meses: desde o último dia útil do mesmo mês, 1 e 3 anos antes.</p>
-      <p><b>Cálculos.</b> Rentabilidade pela variação da cota. Poupança: rendimento acumulado dos depósitos com aniversário no dia 1º (Banco Central). Valores extremos no gráfico de risco × retorno: fundos com rentabilidade ou volatilidade a mais de 2 desvios padrão da média da classe (podem ser exibidos). Captação líquida = aplicações − resgates no período. Volatilidade anualizada (desvio-padrão dos retornos diários × √252). A rentabilidade de cada classe é a média simples dos fundos, sem ponderar pelo patrimônio. Cotistas são posições, não pessoas. Fundos sem cota no início ou no fim do período ficam fora dos rankings daquele período. A cota publicada pela CVM não é ajustada por amortizações.</p>
+      <p><b>Cálculos.</b> Rentabilidade pela variação da cota. Poupança: rendimento acumulado dos depósitos com aniversário no dia 1º (Banco Central). Valores extremos (outliers) no gráfico de risco × retorno: fundos cuja rentabilidade ou volatilidade (esta em escala logarítmica) fica a mais de 3 vezes a distância entre o 1º e o 3º quartil, abaixo do 1º quartil ou acima do 3º, por classe e período; o gráfico é mostrado com e sem eles, e os fundos retirados continuam em todas as médias, medianas e rankings. Captação líquida = aplicações − resgates no período. Volatilidade anualizada (desvio-padrão dos retornos diários × √252). A rentabilidade de cada classe é a média simples dos fundos, sem ponderar pelo patrimônio. Cotistas são posições, não pessoas. Fundos sem cota no início ou no fim do período ficam fora dos rankings daquele período. A cota publicada pela CVM não é ajustada por amortizações.</p>
       <p><b>Fontes.</b> Fundos: CVM (cadastro, Informe Diário e Perfil Mensal). CDI, Poupança e dólar: Banco Central. Ibovespa e ISE: B3. IMA, IDA e IHFA: ANBIMA. S&amp;P 500: S&amp;P Dow Jones Indices, via FRED. Nasdaq e cripto (Nasdaq Crypto Index): Nasdaq. Euro Stoxx 50 e Shanghai Composite: STOXX e SSE, via Yahoo Finance. Ouro: NAV do SPDR Gold Shares (GLD), State Street. As variações dos índices são calculadas pela equipe a partir das fontes; os números-índice não são reproduzidos. Os índices ANBIMA são usados como referência de mercado, e a ANBIMA não se responsabiliza pelo seu uso.</p>
       <p><b>Aviso.</b> Conteúdo informativo. Não é recomendação de investimento. Rentabilidade passada não garante rentabilidade futura.</p>
     </div>
@@ -170,45 +204,7 @@
 </footer>
 
 
-<dialog id="dlg-destaque" class="janela" aria-labelledby="destaque-titulo">
-  <div class="janela-topo">
-    <div>
-      <div class="rotulo azul">DESTAQUE</div>
-      <h2 id="destaque-titulo" class="titulo"></h2>
-    </div>
-    <button type="button" class="fechar" data-fecha aria-label="Fechar">✕</button>
-  </div>
-  <div class="janela-corpo">
-    <div id="destaque-video" class="video" hidden></div>
-    <div id="destaque-texto" class="editorial"></div>
-    <div id="destaque-assinatura" class="nota"></div>
-  </div>
-</dialog>
-
-<dialog id="dlg-quem" class="janela" aria-labelledby="quem-titulo">
-  <div class="janela-topo">
-    <div><div class="rotulo azul">QUEM SOMOS</div></div>
-    <button type="button" class="fechar" data-fecha aria-label="Fechar">✕</button>
-  </div>
-  <div class="janela-corpo">
-    <h2 class="titulo" id="quem-titulo">O Raio-X Fundos PF é produzido pela HB Escola de Negócios e pela AF3</h2>
-    <div class="instituicoes">
-      <div class="instituicao">
-        <a href="https://hbescoladenegocios.com/" target="_blank" rel="noopener"><img src="assets/logo-hb.png" alt="HB Escola de Negócios" class="logo-grande"></a>
-        <p>Escola de negócios que produz e divulga conhecimento sobre investimentos, com cursos ao vivo e a distância, capacitações in company e mentorias. Foco em fundos, securitização (FIDC, Fiagro, FII) e estruturação no mercado de capitais, para profissionais do mercado financeiro.</p>
-        <a href="https://hbescoladenegocios.com/" target="_blank" rel="noopener">hbescoladenegocios.com</a>
-      </div>
-      <div class="instituicao">
-        <a href="https://af3.com.br/" target="_blank" rel="noopener" class="fundo-escuro"><img src="assets/logo-af3.png" alt="AF3" class="logo-medio"></a>
-        <p>Consultoria que ajuda instituições do mercado de capitais a estruturar, automatizar e escalar suas operações: arquitetura de sistemas, governança regulatória (CVM e ANBIMA), automação de processos e inteligência de dados.</p>
-        <a href="https://af3.com.br/" target="_blank" rel="noopener">af3.com.br</a>
-      </div>
-    </div>
-  </div>
-
-</dialog>
-
 <div id="dica" class="dica" role="tooltip" hidden></div>
-<script src="app.js?v=e72675c0d8"></script>
+<script src="app.js?v=3609ec004a"></script>
 </body>
 </html>

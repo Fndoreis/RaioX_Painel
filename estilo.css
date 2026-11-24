@@ -71,7 +71,7 @@ button.card:hover,button.card:focus-visible{border-color:var(--azul);outline:non
 .grupo-botoes .botao-destaque{background:#a35c00;border-color:#a35c00;color:#fff;font-weight:600}
 .grupo-botoes .botao-destaque:hover{background:#874c00}
 .grupo-botoes .botao-quem{border-style:dashed}
-.janela{border:none;border-radius:12px;padding:0;width:min(880px,calc(100vw - 32px));max-height:calc(100vh - 48px);color:var(--tinta);box-shadow:0 20px 60px rgba(15,27,45,.35)}
+.janela-antiga{border:none;border-radius:12px;padding:0;width:min(880px,calc(100vw - 32px));max-height:calc(100vh - 48px);color:var(--tinta);box-shadow:0 20px 60px rgba(15,27,45,.35)}
 .janela::backdrop{background:rgba(15,27,45,.55)}
 .janela-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:20px 24px 8px;position:sticky;top:0;background:#fff;border-bottom:1px solid var(--linha)}
 .janela-corpo{padding:16px 24px 24px;display:flex;flex-direction:column;gap:14px}
@@ -126,3 +126,40 @@ button.card:hover,button.card:focus-visible{border-color:var(--azul);outline:non
 .trilho .b.mercado{background:var(--azul)}.trilho .b.fundos{background:var(--ambar)}
 .trilho .zero{position:absolute;top:-2px;bottom:-2px;width:1px;background:#7d8a9c}
 @media (max-width:640px){.linha-barra{grid-template-columns:110px 1fr 64px}}
+/* --- navegação única, Destaque e Quem somos como páginas --- */
+.visoes .aba-destaque[aria-selected=false]{color:var(--ambar)}
+.visoes .aba-destaque[aria-selected=true]{color:var(--ambar);border-bottom-color:var(--ambar)}
+.visoes .aba-quem{margin-left:auto}
+@media (max-width:760px){.visoes{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}.visoes button{white-space:nowrap;padding:12px 14px}.visoes .aba-quem{margin-left:0}}
+:focus-visible{outline:3px solid #ffb000;outline-offset:2px}
+button.card:focus-visible{outline:3px solid #ffb000}
+.destaque-corpo{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.destaque-corpo .editorial{flex:1 1 420px;min-width:0}
+.destaque-lado{flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.editorial p{margin:0 0 14px;font-size:16px;line-height:27px;color:var(--texto)}
+.selo-exemplo{display:inline-block;margin-bottom:14px;background:#fff8eb;border:1px solid #e8c48a;color:#6b3d00;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:600}
+.video-vazio,.video-capa{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#c9d3e0;font-size:15px;background:linear-gradient(135deg,#0f1b2d,#1f3b63);border:none;font:inherit;width:100%;cursor:default}
+.video-capa{cursor:pointer;color:#fff}
+.video-vazio .play,.video-capa .play{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:26px}
+.video-capa:hover .play{background:#c4302b}
+/* --- Indicadores em cartões (estilo do painel antigo) --- */
+.ind-topo{overflow-x:auto}
+.quadro-classes{max-width:720px}
+.quadro-classes thead th{background:var(--tinta);color:#fff;font-size:13px}
+.quadro-classes td{font-size:15px}
+.tabela th.atual{background:#244a7c;color:#fff}
+.quadro-classes td.atual,.mini-tab td.atual{background:#eef4fc;font-weight:700}
+.ind-grupo{margin-top:8px}
+h3.grupo-titulo{margin:12px 0 8px}
+.ind-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.ind-card{border:1px solid var(--borda);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:#fff}
+.ind-nome{font-size:13px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.3px;min-height:34px;display:flex;align-items:center;justify-content:center}
+.mini-tab{width:100%;border-collapse:collapse;font-size:13px;text-align:center}
+.mini-tab th{background:var(--tinta);color:#fff;font-weight:600;font-size:11px;padding:5px 2px;border-right:1px solid #3b4a60}
+.mini-tab th.atual{background:var(--azul)}
+.mini-tab td{padding:7px 2px;border-bottom:1px solid var(--linha)}
+.ind-fonte{font-size:11px;color:var(--cinza);text-align:center}
+/* --- Risco × retorno com e sem outliers --- */
+.dispersao .outlier circle{fill:#d9534f;fill-opacity:.55}
+.tabela th.grupo-col{text-align:center;border-bottom:2px solid var(--azul);color:var(--tinta)}
+.tabela tr.selecionada td{background:#eef4fc}
