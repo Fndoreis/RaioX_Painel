@@ -79,3 +79,50 @@ button.card:hover,button.card:focus-visible{border-color:var(--azul);outline:non
 .video{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
 .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .editorial p{margin:0 0 12px;font-size:16px;line-height:27px;color:var(--texto);font-family:Georgia,'Times New Roman',serif}
+.visoes{display:flex;flex-wrap:wrap;gap:4px;border-bottom:2px solid var(--borda)}
+.visoes button{font:inherit;font-size:15px;font-weight:600;padding:12px 18px;min-height:48px;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;color:var(--cinza);cursor:pointer}
+.visoes button[aria-selected=true]{color:var(--azul);border-bottom-color:var(--azul)}
+.visoes button:hover{color:var(--tinta)}
+.visao{display:flex;flex-direction:column;gap:24px}
+.tabela tr.total td{font-weight:700;border-top:2px solid var(--borda);background:var(--fundo)}
+.tabela .limite{color:var(--azul);font-weight:600}
+.tabela th.atual,.tabela td.atual{background:#eef4fc}
+.tabela tr.grupo th{background:var(--fundo);color:var(--tinta);font-size:13px;font-weight:700;padding-top:12px}
+.link{font:inherit;background:none;border:none;padding:0;color:var(--azul);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.ponto{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.empilhada{display:flex;height:28px;border-radius:6px;overflow:hidden;margin-bottom:12px;background:var(--linha)}
+.empilhada>div{color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden}
+.legenda{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--texto)}
+.grade td,.grade th{text-align:right}.grade td:first-child,.grade th:first-child{text-align:left}
+.celula-barra{min-width:110px}
+.mini{height:6px;border-radius:3px;background:var(--linha);overflow:hidden;margin-top:4px}.mini>div{height:6px}
+.estatisticas{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px 16px;background:#fff;border:1px solid var(--borda);border-radius:10px;padding:14px 16px}
+.estatisticas>div{display:flex;flex-direction:column;gap:2px}
+.risco-controles{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
+.busca{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--cinza);flex:1 1 360px}
+.busca input{font:inherit;font-size:15px;padding:10px 12px;min-height:44px;border:1px solid #c3ccd8;border-radius:8px;color:var(--tinta)}
+.marcar{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--texto);flex:1 1 320px;min-height:44px}
+.marcar input{width:18px;height:18px}
+.ficha{border:2px solid #c0392b;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:#fffafa}
+.graficos-risco{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:16px}
+.grafico-risco{margin:0;border:1px solid var(--linha);border-radius:10px;padding:10px}
+.grafico-risco figcaption{font-size:14px;margin-bottom:4px}
+.dispersao{width:100%;height:auto;display:block}
+.dispersao .grade{stroke:var(--linha);stroke-width:1}
+.dispersao .eixo-zero{stroke:#9aa7b8;stroke-width:1}
+.dispersao .marca{font-size:11px;fill:var(--cinza)}
+.dispersao .titulo-eixo{font-size:11px;fill:var(--cinza);font-weight:600}
+.dispersao .mediana{stroke:#c0392b;stroke-width:1.5;stroke-dasharray:6 4}
+.dispersao .rot-mediana{font-size:11px;fill:#c0392b;font-weight:600}
+.dispersao circle{cursor:pointer}.dispersao circle:hover{fill-opacity:1;stroke:#000}
+.dispersao .achado{fill:#c0392b;fill-opacity:1;stroke:#fff;stroke-width:2.5}
+.grafico-barras{display:flex;flex-direction:column;gap:4px}
+.grupo-titulo{font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--cinza);margin-top:10px}
+.linha-barra{display:grid;grid-template-columns:minmax(140px,260px) 1fr 72px;gap:10px;align-items:center;font-size:13px}
+.linha-barra .nome{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.linha-barra .val{text-align:right;font-weight:600;white-space:nowrap}
+.trilho{position:relative;height:16px;background:var(--fundo);border-radius:3px}
+.trilho .b{position:absolute;top:0;height:16px;border-radius:2px}
+.trilho .b.mercado{background:var(--azul)}.trilho .b.fundos{background:var(--ambar)}
+.trilho .zero{position:absolute;top:-2px;bottom:-2px;width:1px;background:#7d8a9c}
+@media (max-width:640px){.linha-barra{grid-template-columns:110px 1fr 64px}}

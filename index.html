@@ -35,6 +35,8 @@
 <main class="cont">
   <div id="aviso-previa" class="aviso" hidden>Prévia interna: este mês ainda não foi liberado para publicação.</div>
 
+  <nav class="visoes" role="tablist" aria-label="Visões do painel" id="visoes"></nav>
+
   <div class="filtros">
     <div class="grupo-botoes" role="group" aria-label="Classe" id="botoes-classe"></div>
     <div class="segmentado" role="group" aria-label="Período" id="botoes-periodo"></div>
@@ -47,36 +49,103 @@
     <div id="leitura-assinatura" class="nota"></div>
   </section>
 
-  <section class="bloco">
-    <div class="rotulo" id="rent-rotulo"></div>
-    <h2 class="titulo" id="rent-manchete"></h2>
-    <div class="cards" id="cards"></div>
-    <div class="nota"><a href="#indicadores">Ver todos os indicadores</a></div>
-  </section>
-
-  <div class="duas-colunas">
-    <section class="cartao larga">
-      <div class="rotulo" id="rank-rotulo"></div>
-      <h2 class="titulo" id="rank-manchete"></h2>
-      <div class="abas" role="tablist" aria-label="Ranking" id="abas-ranking"></div>
-      <div class="rolagem"><table class="tabela" id="tab-ranking"></table></div>
+  <!-- ===== Visão geral ===== -->
+  <div id="v-geral" class="visao" role="tabpanel" aria-labelledby="aba-geral">
+    <section class="bloco">
+      <div class="rotulo" id="geral-rotulo"></div>
+      <h2 class="titulo" id="geral-manchete"></h2>
+      <div class="cards" id="geral-cards"></div>
     </section>
-
-    <section class="cartao estreita">
-      <div class="rotulo" id="comp-rotulo"></div>
-      <h2 class="titulo" id="comp-manchete"></h2>
-      <div class="abas" role="tablist" aria-label="Comparação" id="abas-comp"></div>
-      <div id="barras"></div>
-      <table class="tabela compacta" id="tab-comp"></table>
+    <section class="cartao">
+      <div class="rotulo">RESUMO POR CLASSE</div>
+      <div class="rolagem"><table class="tabela" id="tab-resumo"></table></div>
+      <div class="nota">Rentabilidade: média simples dos fundos (padrão do painel), mediana e média ponderada pelo patrimônio. Captação líquida no período selecionado.</div>
+    </section>
+    <div class="duas-colunas">
+      <section class="cartao estreita">
+        <div class="rotulo">DISTRIBUIÇÃO DO PATRIMÔNIO</div>
+        <div id="distribuicao"></div>
+      </section>
+      <section class="cartao larga">
+        <div class="rotulo" id="superaram-rotulo"></div>
+        <h2 class="titulo">Percentual de fundos que igualaram ou superaram cada referência</h2>
+        <div id="superaram" class="superaram"></div>
+      </section>
+    </div>
+    <section class="cartao">
+      <div class="rotulo" id="quartis-rotulo"></div>
+      <h2 class="titulo">Como os resultados se distribuem dentro de cada classe</h2>
+      <div class="rolagem"><table class="tabela" id="tab-quartis"></table></div>
+      <div class="nota">Os fundos de cada classe são divididos em quatro grupos de mesmo tamanho pela rentabilidade (1º quartil = 25% piores; 4º = 25% melhores). Limite: rentabilidade que separa um quartil do seguinte. Desvio padrão: o quanto os resultados se espalham em torno da média.</div>
+    </section>
+    <section class="cartao">
+      <div class="rotulo">EVOLUÇÃO DO PATRIMÔNIO E DA CAPTAÇÃO</div>
+      <h2 class="titulo">Patrimônio dos fundos do universo atual e dinheiro que entrou ou saiu</h2>
+      <div class="rolagem"><table class="tabela" id="tab-evolucao"></table></div>
+      <div class="nota">Patrimônio em cada data considera os fundos que estão no universo hoje. Captação líquida = aplicações − resgates no período.</div>
     </section>
   </div>
 
-  <section class="cartao" id="indicadores">
-    <div class="rotulo">TODOS OS INDICADORES</div>
-    <h2 class="titulo">Variação no mês, no ano e em 12 meses</h2>
-    <div class="rolagem"><table class="tabela" id="tab-indicadores"></table></div>
-    <div class="nota">Variações calculadas pela equipe a partir das fontes indicadas; números-índice não são reproduzidos.</div>
-  </section>
+  <!-- ===== Por classe ===== -->
+  <div id="v-classe" class="visao" role="tabpanel" aria-labelledby="aba-classe" hidden>
+    <section class="bloco">
+      <div class="rotulo" id="rent-rotulo"></div>
+      <h2 class="titulo" id="rent-manchete"></h2>
+      <div class="cards" id="cards"></div>
+      <div class="estatisticas" id="estatisticas"></div>
+    </section>
+
+    <div class="duas-colunas">
+      <section class="cartao larga">
+        <div class="rotulo" id="rank-rotulo"></div>
+        <h2 class="titulo" id="rank-manchete"></h2>
+        <div class="abas" role="tablist" aria-label="Ranking" id="abas-ranking"></div>
+        <div class="rolagem"><table class="tabela" id="tab-ranking"></table></div>
+      </section>
+
+      <section class="cartao estreita">
+        <div class="rotulo" id="comp-rotulo"></div>
+        <h2 class="titulo" id="comp-manchete"></h2>
+        <div class="abas" role="tablist" aria-label="Comparação" id="abas-comp"></div>
+        <div id="barras"></div>
+        <table class="tabela compacta" id="tab-comp"></table>
+      </section>
+    </div>
+  </div>
+
+  <!-- ===== Risco × retorno ===== -->
+  <div id="v-risco" class="visao" role="tabpanel" aria-labelledby="aba-risco" hidden>
+    <section class="cartao">
+      <div class="rotulo" id="risco-rotulo"></div>
+      <h2 class="titulo">Risco × retorno: cada ponto é um fundo</h2>
+      <div class="risco-controles">
+        <label class="busca">Buscar fundo (nome ou CNPJ)
+          <input id="busca-fundo" type="search" list="lista-fundos" autocomplete="off" placeholder="Ex.: Trend Ouro ou 22963439000152">
+          <datalist id="lista-fundos"></datalist>
+        </label>
+        <label class="marcar"><input id="sem-extremos" type="checkbox" checked> Esconder valores extremos (rentabilidade ou volatilidade a mais de 2 desvios padrão da média da classe)</label>
+      </div>
+      <div id="ficha-fundo" class="ficha" hidden></div>
+      <div id="graficos-risco" class="graficos-risco"></div>
+      <div class="nota">Eixo horizontal: volatilidade anualizada. Eixo vertical: rentabilidade no período. Linha tracejada: mediana da rentabilidade da classe. Passe o mouse sobre um ponto para ver o fundo.</div>
+    </section>
+  </div>
+
+  <!-- ===== Indicadores ===== -->
+  <div id="v-indicadores" class="visao" role="tabpanel" aria-labelledby="aba-indicadores" hidden>
+    <section class="cartao" id="indicadores">
+      <div class="rotulo" id="ind-rotulo"></div>
+      <h2 class="titulo" id="ind-manchete"></h2>
+      <div id="grafico-indicadores" class="grafico-barras"></div>
+      <div class="nota">Barras azuis: indicadores de mercado. Barras laranja: média dos fundos de cada classe do painel, para comparação. Bolsas internacionais, ouro (GLD) e cripto (NCI) em dólar ou na moeda local do índice, sem conversão para reais.</div>
+    </section>
+    <section class="cartao">
+      <div class="rotulo">TODOS OS INDICADORES</div>
+      <h2 class="titulo">Variação no mês, no ano, em 12 e em 36 meses</h2>
+      <div class="rolagem"><table class="tabela" id="tab-indicadores"></table></div>
+      <div class="nota">Variações calculadas pela equipe a partir das fontes indicadas; números-índice não são reproduzidos.</div>
+    </section>
+  </div>
 
   <section class="cartao" id="resumo">
     <div class="rotulo">UNIVERSO DO MÊS</div>
@@ -88,9 +157,9 @@
     <div class="rotulo">NOTA METODOLÓGICA</div>
     <div class="texto metodologia">
       <p><b>Universo.</b> Fundos de Renda Fixa, Ações e Multimercado abertos e em funcionamento, não exclusivos, não destinados só a investidores profissionais e não previdenciários, com pelo menos 12 meses de Informe Diário, PL de R$ 10 milhões ou mais, 100 cotistas ou mais e PL médio por cotista de até R$ 500 mil. O universo é recalculado a cada mês. A classe Renda Fixa – Baixa Duração reúne os fundos de Renda Fixa classificados pela ANBIMA como Duração Baixa (Crédito Livre, Grau de Investimento ou Soberano) ou Renda Fixa Simples.</p>
-      <p><b>Períodos.</b> Data-base é o último dia útil do mês. Mês: desde o último dia útil do mês anterior. Ano: desde o último dia útil do ano anterior. 12 meses: desde o último dia útil do mesmo mês do ano anterior.</p>
-      <p><b>Cálculos.</b> Rentabilidade pela variação da cota. Captação líquida = aplicações − resgates no período. Volatilidade anualizada (desvio-padrão dos retornos diários × √252). A rentabilidade de cada classe é a média simples dos fundos, sem ponderar pelo patrimônio. Cotistas são posições, não pessoas. Fundos sem cota no início ou no fim do período ficam fora dos rankings daquele período. A cota publicada pela CVM não é ajustada por amortizações.</p>
-      <p><b>Fontes.</b> Fundos: CVM (cadastro, Informe Diário e Perfil Mensal). CDI e dólar: Banco Central. Ibovespa e ISE: B3. IMA, IDA e IHFA: ANBIMA. S&amp;P 500: S&amp;P Dow Jones Indices, via FRED. Nasdaq e cripto (Nasdaq Crypto Index): Nasdaq. Euro Stoxx 50 e Shanghai Composite: STOXX e SSE, via Yahoo Finance. Ouro: NAV do SPDR Gold Shares (GLD), State Street. As variações dos índices são calculadas pela equipe a partir das fontes; os números-índice não são reproduzidos. Os índices ANBIMA são usados como referência de mercado, e a ANBIMA não se responsabiliza pelo seu uso.</p>
+      <p><b>Períodos.</b> Data-base é o último dia útil do mês. Mês: desde o último dia útil do mês anterior. Ano: desde o último dia útil do ano anterior. 12 e 36 meses: desde o último dia útil do mesmo mês, 1 e 3 anos antes.</p>
+      <p><b>Cálculos.</b> Rentabilidade pela variação da cota. Poupança: rendimento acumulado dos depósitos com aniversário no dia 1º (Banco Central). Valores extremos no gráfico de risco × retorno: fundos com rentabilidade ou volatilidade a mais de 2 desvios padrão da média da classe (podem ser exibidos). Captação líquida = aplicações − resgates no período. Volatilidade anualizada (desvio-padrão dos retornos diários × √252). A rentabilidade de cada classe é a média simples dos fundos, sem ponderar pelo patrimônio. Cotistas são posições, não pessoas. Fundos sem cota no início ou no fim do período ficam fora dos rankings daquele período. A cota publicada pela CVM não é ajustada por amortizações.</p>
+      <p><b>Fontes.</b> Fundos: CVM (cadastro, Informe Diário e Perfil Mensal). CDI, Poupança e dólar: Banco Central. Ibovespa e ISE: B3. IMA, IDA e IHFA: ANBIMA. S&amp;P 500: S&amp;P Dow Jones Indices, via FRED. Nasdaq e cripto (Nasdaq Crypto Index): Nasdaq. Euro Stoxx 50 e Shanghai Composite: STOXX e SSE, via Yahoo Finance. Ouro: NAV do SPDR Gold Shares (GLD), State Street. As variações dos índices são calculadas pela equipe a partir das fontes; os números-índice não são reproduzidos. Os índices ANBIMA são usados como referência de mercado, e a ANBIMA não se responsabiliza pelo seu uso.</p>
       <p><b>Aviso.</b> Conteúdo informativo. Não é recomendação de investimento. Rentabilidade passada não garante rentabilidade futura.</p>
     </div>
   </section>
