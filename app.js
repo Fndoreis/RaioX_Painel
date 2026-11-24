@@ -1,11 +1,11 @@
 /* Raio-X Fundos PF — painel público. Lê dados/meses.json, dados/<mes>.json e, sob demanda, dados/<mes>-fundos.json
-   (gerados por raiox.outputs.site). Visões: Destaque, Visão geral, Indicadores, Por classe, Risco × retorno e Quem somos. */
+   (gerados por raiox.outputs.site). Visões: A palavra do Especialista, Visão geral, Indicadores, Por classe, Risco × retorno e Quem somos. */
 (function () {
   "use strict";
   // ordem do menos ao mais arriscado
   const CLASSES = ["RF Baixa Duração", "Renda Fixa", "Multimercados", "Ações"];
   const CORES = { "RF Baixa Duração": "#5aa0e6", "Renda Fixa": "#1f4e8c", "Multimercados": "#d08c00", "Ações": "#2a8f62" };
-  const VISOES = [["destaque", "Destaque"], ["geral", "Visão geral"], ["indicadores", "Indicadores"], ["classe", "Por classe"],
+  const VISOES = [["destaque", "A palavra do Especialista"], ["geral", "Visão geral"], ["indicadores", "Indicadores"], ["classe", "Por classe"],
                   ["risco", "Risco × retorno"], ["quem", "Quem somos"]];
   const COM_PERIODO = new Set(["geral", "indicadores", "classe", "risco"]);
   const COM_CLASSE = new Set(["classe", "risco"]);
@@ -733,7 +733,8 @@
     const ex = autores.length ? null : destaqueExemplo();
     $("destaque-titulo").textContent = autores.length ? (l.destaque_titulo || `A indústria de fundos em ${nomeMes(d.mes)}`) : ex.titulo;
     const t = limpar($("destaque-texto"));
-    if (ex) t.append(el("div", { class: "selo-exemplo", text: "Texto de exemplo, montado automaticamente com os números do mês. Será substituído pela análise dos autores." }));
+    if (ex) t.append(el("div", { class: "selo-exemplo", text: "Texto de exemplo, montado automaticamente com os números do mês. " +
+      "Neste espaço, como numa carta do gestor, um especialista em fundos traz sua análise do mês em texto e vídeo." }));
     for (const p of autores.length ? autores : ex.paragrafos) t.append(el("p", { text: p }));
     $("destaque-assinatura").textContent = autores.length ? (l.assinatura || "") : "";
     const v = $("destaque-video"), atual = v.dataset.video || "";
@@ -741,12 +742,11 @@
       limpar(v);
       v.dataset.video = d.video_id || "-";
       if (d.video_id) {
-        // domínio do YouTube sem cookies de rastreamento
         // o YouTube (~1 MB) só é carregado quando a pessoa clica em assistir; domínio sem cookies de rastreamento
-        const capa = el("button", { type: "button", class: "video-capa", "aria-label": "Assistir ao vídeo do destaque" },
-          el("div", { class: "play", "aria-hidden": "true", text: "▶" }), el("div", { text: "Assistir ao vídeo do mês" }));
+        const capa = el("button", { type: "button", class: "video-capa", "aria-label": "Assistir ao vídeo do especialista" },
+          el("div", { class: "play", "aria-hidden": "true", text: "▶" }), el("div", { text: d.video_exemplo ? "Assistir ao vídeo (exemplo)" : "Assistir ao vídeo do especialista" }));
         capa.onclick = () => limpar(v).append(el("iframe", { src: `https://www.youtube-nocookie.com/embed/${d.video_id}?autoplay=1`,
-          title: "Vídeo do destaque do mês", allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen",
+          title: "Vídeo da palavra do especialista", allow: "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen",
           referrerpolicy: "strict-origin-when-cross-origin", allowfullscreen: "" }));
         v.append(capa);
       } else {
@@ -754,8 +754,10 @@
           el("div", { text: "Espaço do vídeo do mês" })));
       }
     }
-    $("destaque-video-nota").textContent = d.video_id ? "Vídeo do destaque do mês (YouTube)."
-      : "O vídeo aparece aqui quando o link do YouTube é enviado no formulário da Leitura do mês.";
+    $("destaque-video-nota").textContent = !d.video_id
+      ? "O vídeo aparece aqui quando o link do YouTube é enviado no formulário da Leitura do mês."
+      : d.video_exemplo ? "Vídeo de exemplo (versão de teste), só para mostrar como o vídeo roda nesta página."
+      : "Vídeo do especialista (YouTube).";
   }
 
   function render() {

@@ -163,3 +163,8 @@ h3.grupo-titulo{margin:12px 0 8px}
 .dispersao .outlier circle{fill:#d9534f;fill-opacity:.55}
 .tabela th.grupo-col{text-align:center;border-bottom:2px solid var(--azul);color:var(--tinta)}
 .tabela tr.selecionada td{background:#eef4fc}
+/* Quem somos em destaque, com cor própria */
+.visoes .aba-quem{background:#0f7b6c;color:#fff;border-radius:999px;margin:6px 0 6px auto;min-height:40px;padding:8px 18px;border-bottom:none}
+.visoes .aba-quem:hover{background:#0b5f53;color:#fff}
+.visoes .aba-quem[aria-selected=true]{background:#0b5f53;color:#fff;box-shadow:0 0 0 3px rgba(15,123,108,.3)}
+@media (max-width:760px){.visoes .aba-quem{margin-left:0}}
