@@ -9,10 +9,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=c511c09996">
+<link rel="stylesheet" href="estilo.css?v=4ff596e895">
 </head>
 <body>
-<div id="faixa-teste" class="faixa-teste" role="status" hidden>EM DESENVOLVIMENTO · versão de teste com dados não finais · não use para decisões</div>
+<div id="faixa-teste" class="faixa-teste" role="status" hidden>EM DESENVOLVIMENTO<span class="so-largo"> · versão de teste com dados não finais</span> · não use para decisões</div>
 <header class="topo">
   <div class="cont topo-linha">
     <div>
@@ -52,6 +52,7 @@
       <div class="rotulo" id="geral-rotulo"></div>
       <h2 class="titulo" id="geral-manchete"></h2>
       <div class="cards" id="geral-cards"></div>
+      <button type="button" class="chamada-esp" id="geral-esp"></button>
     </section>
     <section class="cartao">
       <div class="rotulo">RESUMO POR CLASSE</div>
@@ -99,6 +100,7 @@
         <h2 class="titulo" id="rank-manchete"></h2>
         <div class="abas" role="tablist" aria-label="Ranking" id="abas-ranking"></div>
         <div class="rolagem"><table class="tabela" id="tab-ranking"></table></div>
+        <p class="aviso-rank">Ranking informativo, não é recomendação de investimento. Rentabilidade passada não garante rentabilidade futura: veja também a volatilidade e o patrimônio de cada fundo.</p>
       </section>
 
       <section class="cartao estreita">
@@ -145,7 +147,7 @@
       <div id="graficos-risco" class="graficos-risco"></div>
       <div class="rolagem"><table class="tabela" id="tab-outliers"></table></div>
       <div class="nota" id="nota-outliers"></div>
-      <div class="nota">Eixo horizontal: volatilidade anualizada. Eixo vertical: rentabilidade no período. Linha tracejada: mediana da rentabilidade da classe. Passe o mouse sobre um ponto para ver o fundo; clique para abrir a ficha.</div>
+      <div class="nota">Eixo horizontal: volatilidade anualizada. Eixo vertical: rentabilidade no período. Linha tracejada: mediana da rentabilidade da classe. Passe o mouse sobre um ponto para ver o fundo; clique (no celular, toque) para abrir a ficha.<span class="so-estreito"> Arraste o gráfico para o lado para ver o eixo inteiro.</span></div>
     </section>
   </div>
 
@@ -220,7 +222,8 @@
   </section>
 
   <section class="cartao" id="metodologia">
-    <div class="rotulo">NOTA METODOLÓGICA</div>
+    <details>
+    <summary><span class="rotulo">NOTA METODOLÓGICA</span> <span class="abrir">Como calculamos: universo, períodos, cálculos e fontes</span></summary>
     <div class="texto metodologia">
       <p><b>Universo.</b> Fundos de Renda Fixa, Ações e Multimercado abertos e em funcionamento, não exclusivos, não destinados só a investidores profissionais e não previdenciários, com pelo menos 12 meses de Informe Diário, PL de R$ 10 milhões ou mais, 100 cotistas ou mais e PL médio por cotista de até R$ 500 mil. O universo é recalculado a cada mês. A classe Renda Fixa – Baixa Duração reúne os fundos de Renda Fixa classificados pela ANBIMA como Duração Baixa (Crédito Livre, Grau de Investimento ou Soberano) ou Renda Fixa Simples.</p>
       <p><b>Períodos.</b> Data-base é o último dia útil do mês. Mês: desde o último dia útil do mês anterior. Ano: desde o último dia útil do ano anterior. 12 e 36 meses: desde o último dia útil do mesmo mês, 1 e 3 anos antes.</p>
@@ -228,6 +231,9 @@
       <p><b>Fontes.</b> Fundos: CVM (cadastro, Informe Diário e Perfil Mensal). CDI, Poupança e dólar: Banco Central. Ibovespa e ISE: B3. IMA, IDA e IHFA: ANBIMA. S&amp;P 500: S&amp;P Dow Jones Indices, via FRED. Nasdaq e cripto (Nasdaq Crypto Index): Nasdaq. Euro Stoxx 50 e Shanghai Composite: STOXX e SSE, via Yahoo Finance. Ouro: NAV do SPDR Gold Shares (GLD), State Street. As variações dos índices são calculadas pela equipe a partir das fontes; os números-índice não são reproduzidos. Os índices ANBIMA são usados como referência de mercado, e a ANBIMA não se responsabiliza pelo seu uso.</p>
       <p><b>ETFs.</b> Seção à parte: os ETFs não entram no universo, nos rankings nem nas medianas dos fundos. Lista e divisão em renda variável, renda fixa, cripto e FII: B3 (fundos listados). Retorno pela variação do preço de fechamento na bolsa entre o início e o fim do período (mesmas datas dos fundos); rendimentos distribuídos aos cotistas não entram. Preços: séries históricas da B3 (COTAHIST). Os ETFs de renda fixa não estão nesse arquivo: para eles o retorno é o da cota patrimonial, do Informe Diário que o administrador entrega no Fundos.NET da B3, e a liquidez em bolsa não é medida. Patrimônio e gestor: cadastro da CVM. Negociado no mês: negócios em pelo menos 80% dos pregões e volume médio de R$ 100 mil por pregão; os demais aparecem como pouco negociados, porque o preço pode não refletir o valor da cota. Os grupos dentro de cada tipo são definidos pelo nome do índice. Índices internacionais, ouro e cripto de referência estão na moeda do próprio índice, e o ETF, em reais.</p>
       <p><b>Universo de hoje (viés de sobrevivência).</b> Todos os números consideram os fundos que estão no universo na data-base. Fundos encerrados, incorporados ou que ficaram abaixo dos cortes no caminho não entram, e eles costumam ter resultados piores. Em 36 meses, fundos com menos de 3 anos ficam sem rentabilidade. As cotas são líquidas de taxas e brutas de imposto de renda; a Poupança é isenta.</p>
+    </div>
+    </details>
+    <div class="texto metodologia">
       <p><b>Aviso.</b> Conteúdo informativo. Não é recomendação de investimento. Rentabilidade passada não garante rentabilidade futura.</p>
     </div>
   </section>
@@ -239,6 +245,6 @@
 
 
 <div id="dica" class="dica" role="tooltip" hidden></div>
-<script src="app.js?v=f0f6f9a2e9"></script>
+<script src="app.js?v=b721765217"></script>
 </body>
 </html>

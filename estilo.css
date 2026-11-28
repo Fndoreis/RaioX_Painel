@@ -16,6 +16,12 @@ a{color:var(--azul)}a:hover{color:var(--azul-esc)}
 .data-base{font-size:13px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid #26364d;color:var(--claro)}
 .data-base .meta-db{opacity:.75}
 .data-base select{font-size:14px;padding:6px 8px;border-radius:6px;border:1px solid #3b4a60;background:#16253b;color:#fff;min-height:40px}
+.chamada-esp{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;width:100%;margin-top:16px;padding:14px 18px;text-align:left;
+  background:#fff8ec;border:1px solid #f0d9ad;border-left:4px solid var(--ambar);border-radius:8px;cursor:pointer;font:inherit;color:var(--texto)}
+.chamada-esp:hover{background:#fff2da}
+.chamada-esp .rot{font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--ambar)}
+.chamada-esp .tit{font-size:16px;font-weight:600;flex:1 1 280px}
+.chamada-esp .ir{font-size:14px;color:var(--azul);font-weight:600;white-space:nowrap}
 .sel-data{display:flex;gap:6px;align-items:center}
 .sel-data .seta{min-width:40px;min-height:40px;border-radius:6px;border:1px solid #3b4a60;background:#16253b;color:#fff;font-size:22px;line-height:1;cursor:pointer}
 .sel-data .seta:disabled{opacity:.35;cursor:default}
@@ -184,3 +190,30 @@ h3.grupo-titulo{margin:12px 0 8px}
 .tabela .tk{font-weight:700;white-space:nowrap}
 .tabela .sub{font-size:12px;color:var(--cinza)}
 .botao-link{font:inherit;font-size:13px;background:none;border:none;color:var(--azul);text-decoration:underline;cursor:pointer;padding:8px 0;min-height:40px}
+
+.aviso-rank{margin:10px 0 0;font-size:13px;color:var(--cinza);border-left:3px solid var(--borda);padding-left:10px}
+td.ref-classe{outline:2px solid var(--tinta);outline-offset:-3px;border-radius:4px}
+#metodologia summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;min-height:44px}
+#metodologia summary::-webkit-details-marker{display:none}
+#metodologia summary .abrir{color:var(--azul);font-weight:600;font-size:14px}
+#metodologia summary .abrir::after{content:" ▸"}
+#metodologia details[open] summary .abrir::after{content:" ▾"}
+#metodologia details[open] summary{margin-bottom:8px}
+/* ---------- celular ---------- */
+.so-estreito{display:none}
+.visoes{background:
+  linear-gradient(to right,var(--fundo) 30%,rgba(246,248,251,0)) left center/40px 100% no-repeat local,
+  linear-gradient(to left,var(--fundo) 30%,rgba(246,248,251,0)) right center/40px 100% no-repeat local,
+  linear-gradient(to right,rgba(15,27,45,.22),rgba(15,27,45,0)) left center/16px 100% no-repeat scroll,
+  linear-gradient(to left,rgba(15,27,45,.22),rgba(15,27,45,0)) right center/16px 100% no-repeat scroll}
+@media (max-width:640px){
+  .so-largo{display:none}.so-estreito{display:inline}
+  .faixa-teste{font-size:12px;padding:6px 12px;letter-spacing:.3px}
+  .topo{padding:12px 0}.marca{font-size:23px}.sub{font-size:12px}
+  .topo-linha{gap:10px}.produzido{gap:10px;font-size:12px}.produzido img{height:28px}
+  .data-base{margin-top:10px;padding-top:8px;flex-wrap:nowrap}.data-base .meta-db{display:none}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .cards>.card.escuro{grid-column:1/-1}
+  .card{padding:12px;gap:4px}.card .valor{font-size:22px}.card .nome{font-size:12px}.card .det{font-size:11.5px}
+  .grafico-risco{overflow-x:auto}.grafico-risco .dispersao{min-width:540px}
+}

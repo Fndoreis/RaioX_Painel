@@ -5,7 +5,7 @@
   // ordem do menos ao mais arriscado
   const CLASSES = ["RF Baixa Duração", "Renda Fixa", "Multimercados", "Ações"];
   const CORES = { "RF Baixa Duração": "#5aa0e6", "Renda Fixa": "#1f4e8c", "Multimercados": "#d08c00", "Ações": "#2a8f62" };
-  const VISOES = [["destaque", "A palavra do Especialista"], ["geral", "Visão geral"], ["indicadores", "Indicadores"], ["classe", "Por classe"],
+  const VISOES = [["geral", "Visão geral"], ["destaque", "A palavra do Especialista"], ["indicadores", "Indicadores"], ["classe", "Por classe"],
                   ["risco", "Risco × retorno"], ["etfs", "ETFs"], ["quem", "Quem somos"]];
   const COM_PERIODO = new Set(["geral", "indicadores", "classe", "risco", "etfs"]);
   const COM_CLASSE = new Set(["classe", "risco"]);
@@ -21,7 +21,7 @@
   const bench = (cl = est.classe) => BENCH[cl] || ["cdi", "CDI"];
   const PLURAL = { "Ações": "fundos de ações", "Multimercados": "multimercados", "Renda Fixa": "fundos de renda fixa",
                    "RF Baixa Duração": "fundos de RF baixa duração" };
-  const est = { dados: null, visao: "destaque", classe: "Multimercados", periodo: "ANO", ranking: "maiores_rent", comp: "cdi",
+  const est = { dados: null, visao: "geral", classe: "Multimercados", periodo: "ANO", ranking: "maiores_rent", comp: "cdi",
                 fundos: {}, busca: null, etfs: {}, etfTipo: "Renda variável", etfTodos: false };
   const $ = (id) => document.getElementById(id);
 
@@ -78,7 +78,6 @@
   function irPara(visao, classe) {
     est.visao = visao;
     if (classe) est.classe = classe;
-    atualizarLink();
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -150,6 +149,11 @@
       ` e o real aplicado, ${pct(g.rent_ponderada)}`;
     if (cdi && cdi[per] != null) auto += `, contra ${pct(cdi[per])} do CDI`;
     $("geral-manchete").textContent = auto;
+    // chamada para a análise do mês (a aba do especialista deixou de ser a primeira)
+    const ce = limpar($("geral-esp"));
+    ce.append(el("span", { class: "rot", text: "A PALAVRA DO ESPECIALISTA" }), el("span", { class: "tit", text: tituloDestaque() }),
+      el("span", { class: "ir", text: "Ler a análise do mês →" }));
+    ce.onclick = () => irPara("destaque");
     const cards = limpar($("geral-cards"));
     cards.append(el("div", { class: "card escuro" }, el("div", { class: "nome", text: "Patrimônio total" }),
       el("div", { class: "valor", text: reais(g.pl) }),
@@ -221,14 +225,16 @@
     cabecalho(tab, ["Referência", ...CLASSES]);
     const tb = el("tbody");
     for (const [k, nome] of COMPS) {
-      const i = k === "mediana" ? null : ind(k);
+      if (k === "mediana") continue;   // por definição, metade dos fundos fica na mediana ou acima
+      const i = ind(k);
       const ref = i ? `${nome} (${pct(i[per])})` : nome;
       const linha = el("tr", {}, td(ref));
       for (const cl of CLASSES) {
         const c = (blocoDe(cl).comparacoes || {})[k];
         if (!c) { linha.append(td("—", "num")); continue; }
         const a = (c.acima || {}).n_fundos || 0, b = (c.abaixo || {}).n_fundos || 0, n = a + b, p = n ? (100 * a) / n : null;
-        const cel = el("td", { class: "num celula-barra", title: `${inteiro(a)} de ${inteiro(n)} ${PLURAL[cl]}` });
+        const cel = el("td", { class: "num celula-barra" + (bench(cl)[0] === k ? " ref-classe" : ""),
+                               title: `${inteiro(a)} de ${inteiro(n)} ${PLURAL[cl]}` + (bench(cl)[0] === k ? " · referência da classe" : "") });
         const barra = el("div", { class: "mini" }); const cheio = el("div");
         cheio.style.width = (p || 0) + "%"; cheio.style.background = CORES[cl]; barra.append(cheio);
         cel.append(el("span", { class: "forte", text: pct(p, 0) }), barra);
@@ -238,6 +244,7 @@
     }
     tab.append(tb);
     s.append(el("div", { class: "rolagem" }, tab));
+    s.append(el("div", { class: "nota", text: "Com contorno: a referência de cada classe (renda fixa: CDI; multimercados: IHFA; ações: Ibovespa)." }));
   }
 
   function quartis() {
@@ -326,11 +333,13 @@
     $("rank-rotulo").textContent = `${RANKINGS.find((r) => r[0] === est.ranking)[1]} · ${est.classe} · ${ROT_PER[per].toLowerCase()}`;
     let auto = "";
     if (lista.length) {
-      const f = lista[0];
-      auto = { maiores_rent: `${f.nome} lidera com ${pct(f.rent)} ${NOME_PER[per]}`,
-               menores_rent: `${f.nome} tem o menor resultado: ${pct(f.rent)} ${NOME_PER[per]}`,
-               maiores_pl: `${f.nome} é o maior, com ${reais(f.pl)} de patrimônio`,
-               maiores_cotistas: `${f.nome} tem o maior número de cotistas: ${inteiro(f.cotistas)}` }[est.ranking];
+      const n = lista.length, md = (bloco().total || {}).rent_mediana, rs = lista.map((f) => f.rent).filter((x) => x != null);
+      const soma = (c) => lista.reduce((t, f) => t + (f[c] || 0), 0);
+      const faixa = rs.length ? `de ${pct(Math.min(...rs))} a ${pct(Math.max(...rs))}` : "";
+      auto = { maiores_rent: `Os ${n} ${PLURAL[est.classe]} de maior rentabilidade ${NOME_PER[per]} renderam ${faixa}; a mediana da classe foi ${pct(md)}`,
+               menores_rent: `Os ${n} ${PLURAL[est.classe]} de menor rentabilidade ${NOME_PER[per]} ficaram ${faixa}; a mediana da classe foi ${pct(md)}`,
+               maiores_pl: `Os ${n} maiores ${PLURAL[est.classe]} somam ${reais(soma("pl"))} de patrimônio`,
+               maiores_cotistas: `Os ${n} ${PLURAL[est.classe]} com mais cotistas somam ${inteiro(soma("cotistas"))} posições` }[est.ranking];
     }
     $("rank-manchete").textContent = manchete("ranking_" + est.ranking, auto);
     abas("abas-ranking", RANKINGS, est.ranking, (k) => { est.ranking = k; ranking(); });
@@ -807,6 +816,11 @@
     return { titulo: `Fundos para pessoas físicas: o que mudou em ${nomeMes(d.mes)}`, paragrafos: p };
   }
 
+  function tituloDestaque() {
+    const l = est.dados.leitura || {};
+    return (l.destaque || "").trim() ? (l.destaque_titulo || `A indústria de fundos em ${nomeMes(est.dados.mes)}`) : destaqueExemplo().titulo;
+  }
+
   function visaoDestaque() {
     const l = est.dados.leitura || {}, d = est.dados;
     const autores = (l.destaque || "").split(/\n+/).map((x) => x.trim()).filter(Boolean);
@@ -849,15 +863,56 @@
     else if (est.visao === "classe") { rentabilidade(); ranking(); comparacao(); gestores(); subtipos(); }
     else if (est.visao === "risco") visaoRisco();
     else if (est.visao === "etfs") visaoEtfs().catch((e) => { $("etf-manchete").textContent = "Não foi possível carregar os ETFs: " + e.message; });
+    sincronizarLink();
   }
 
-  // ---------- data-base: ano, mês e setas; o link guarda a visão e o mês (#classe/2026-03) ----------
+  // ---------- link: aba, mês, classe e período (#classe?mes=2026-03&classe=acoes&periodo=12m) ----------
+  // cada troca vira uma entrada no histórico (o Voltar do navegador volta à tela anterior); o mês mais recente
+  // não aparece no link; aceita também o formato antigo #classe/2026-03
   const MES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   let MESES_DISP = [];   // do mais recente ao mais antigo
-  function atualizarLink() {
-    const m = est.dados && est.dados.mes;
-    history.replaceState(null, "", "#" + est.visao + (m && m !== MESES_DISP[0] ? "/" + m : ""));
+  const SLUG_CL = { "RF Baixa Duração": "rf-baixa-duracao", "Renda Fixa": "renda-fixa", "Multimercados": "multimercados", "Ações": "acoes" };
+  const SLUG_PER = { MES: "mes", ANO: "ano", "12M": "12m", "36M": "36m" };
+  const deSlug = (obj, v) => Object.keys(obj).find((k) => obj[k] === v);
+  let ultimoLink = null, aplicando = false;
+  function linkAtual() {
+    const q = [], m = est.dados && est.dados.mes;
+    if (m && m !== MESES_DISP[0]) q.push("mes=" + m);
+    if (COM_CLASSE.has(est.visao)) q.push("classe=" + SLUG_CL[est.classe]);
+    if (COM_PERIODO.has(est.visao)) q.push("periodo=" + SLUG_PER[est.periodo]);
+    return "#" + est.visao + (q.length ? "?" + q.join("&") : "");
   }
+  function sincronizarLink() {
+    if (aplicando) return;
+    const h = linkAtual();
+    if (h !== location.hash) {
+      if (ultimoLink === null) history.replaceState(null, "", h); else history.pushState(null, "", h);
+    }
+    ultimoLink = h;
+  }
+  function lerLink() {
+    const [cam, qs] = decodeURIComponent(location.hash.replace(/^#/, "")).split("?");
+    const [v, antigo] = cam.split("/");
+    const p = new URLSearchParams(qs || "");
+    return { visao: VISOES.some(([k]) => k === v) ? v : "geral", mes: p.get("mes") || antigo || null,
+             classe: deSlug(SLUG_CL, p.get("classe")), periodo: deSlug(SLUG_PER, p.get("periodo")) };
+  }
+  async function aplicarLink() {
+    const l = lerLink();
+    est.visao = l.visao;
+    if (l.classe) est.classe = l.classe;
+    if (l.periodo) est.periodo = l.periodo;
+    const mes = MESES_DISP.includes(l.mes) ? l.mes : MESES_DISP[0];
+    aplicando = true;
+    try {
+      if (!est.dados || est.dados.mes !== mes) await carregar(mes); else render();
+    } finally { aplicando = false; }
+    const h = linkAtual();   // normaliza (formato antigo, mês mais recente explícito etc.) sem criar entrada no histórico
+    if (h !== location.hash) history.replaceState(null, "", h);
+    ultimoLink = h;
+  }
+  // Voltar/Avançar do navegador, ou link colado/editado com a página aberta
+  window.addEventListener("hashchange", () => { if (location.hash !== ultimoLink) aplicarLink(); });
   function montarSeletor(mes) {
     const [ano] = mes.split("-");
     const anos = [...new Set(MESES_DISP.map((m) => m.slice(0, 4)))];
@@ -879,7 +934,6 @@
     montarSeletor(mes);
     const r = await fetch(`dados/${mes}.json`, { cache: "no-cache" });
     est.dados = await r.json();
-    atualizarLink();
     est.busca = null;
     $("busca-fundo").value = "";
     if (!est.dados.d0["36M"] && est.periodo === "36M") est.periodo = "12M";
@@ -887,8 +941,6 @@
   }
 
   async function iniciar() {
-    const [h, hm] = location.hash.replace("#", "").split("/");
-    if (VISOES.some(([k]) => k === h)) est.visao = h;
     MESES_DISP = (await (await fetch("dados/meses.json", { cache: "no-cache" })).json()).slice().sort().reverse();
     $("sel-mes").onchange = (e) => carregar(e.target.value);
     $("sel-ano").onchange = (e) => {   // mesmo mês no outro ano, se existir; senão o mais recente daquele ano
@@ -898,7 +950,7 @@
     const passo = (d) => { const i = MESES_DISP.indexOf(est.dados.mes) + d; if (i >= 0 && i < MESES_DISP.length) carregar(MESES_DISP[i]); };
     $("mes-ant").onclick = () => passo(1);
     $("mes-prox").onclick = () => passo(-1);
-    await carregar(MESES_DISP.includes(hm) ? hm : MESES_DISP[0]);
+    await aplicarLink();
   }
   iniciar().catch((e) => { document.querySelector("main").prepend(el("div", { class: "aviso", text: "Não foi possível carregar os dados: " + e })); });
 })();
