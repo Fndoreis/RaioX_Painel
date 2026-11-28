@@ -78,7 +78,7 @@
   function irPara(visao, classe) {
     est.visao = visao;
     if (classe) est.classe = classe;
-    history.replaceState(null, "", "#" + visao);
+    atualizarLink();
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -851,9 +851,35 @@
     else if (est.visao === "etfs") visaoEtfs().catch((e) => { $("etf-manchete").textContent = "Não foi possível carregar os ETFs: " + e.message; });
   }
 
+  // ---------- data-base: ano, mês e setas; o link guarda a visão e o mês (#classe/2026-03) ----------
+  const MES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  let MESES_DISP = [];   // do mais recente ao mais antigo
+  function atualizarLink() {
+    const m = est.dados && est.dados.mes;
+    history.replaceState(null, "", "#" + est.visao + (m && m !== MESES_DISP[0] ? "/" + m : ""));
+  }
+  function montarSeletor(mes) {
+    const [ano] = mes.split("-");
+    const anos = [...new Set(MESES_DISP.map((m) => m.slice(0, 4)))];
+    const sa = limpar($("sel-ano")), sm = limpar($("sel-mes"));
+    for (const a of anos) sa.append(el("option", { value: a, text: a }));
+    sa.value = ano;
+    for (const m of MESES_DISP.filter((m) => m.startsWith(ano + "-")).reverse())
+      sm.append(el("option", { value: m, text: MES_ABREV[+m.slice(5) - 1] }));
+    sm.value = mes;
+    const i = MESES_DISP.indexOf(mes);
+    $("mes-ant").disabled = i >= MESES_DISP.length - 1;
+    $("mes-prox").disabled = i <= 0;
+    $("mes-ant").title = i < MESES_DISP.length - 1 ? `Ir para ${rotMes(MESES_DISP[i + 1])}` : "Não há mês anterior";
+    $("mes-prox").title = i > 0 ? `Ir para ${rotMes(MESES_DISP[i - 1])}` : "Este é o mês mais recente";
+  }
+  const rotMes = (m) => `${MES_ABREV[+m.slice(5) - 1].toLowerCase()}/${m.slice(0, 4)}`;
+
   async function carregar(mes) {
+    montarSeletor(mes);
     const r = await fetch(`dados/${mes}.json`, { cache: "no-cache" });
     est.dados = await r.json();
+    atualizarLink();
     est.busca = null;
     $("busca-fundo").value = "";
     if (!est.dados.d0["36M"] && est.periodo === "36M") est.periodo = "12M";
@@ -861,16 +887,18 @@
   }
 
   async function iniciar() {
-    const h = location.hash.replace("#", "");
+    const [h, hm] = location.hash.replace("#", "").split("/");
     if (VISOES.some(([k]) => k === h)) est.visao = h;
-    const meses = await (await fetch("dados/meses.json", { cache: "no-cache" })).json();
-    const sel = $("sel-mes");
-    for (const m of meses) {
-      const [a, mm] = m.split("-");
-      sel.append(el("option", { value: m, text: `${mm}/${a}` }));
-    }
-    sel.onchange = () => carregar(sel.value);
-    await carregar(meses[0]);
+    MESES_DISP = (await (await fetch("dados/meses.json", { cache: "no-cache" })).json()).slice().sort().reverse();
+    $("sel-mes").onchange = (e) => carregar(e.target.value);
+    $("sel-ano").onchange = (e) => {   // mesmo mês no outro ano, se existir; senão o mais recente daquele ano
+      const alvo = `${e.target.value}-${($("sel-mes").value || "").slice(5)}`;
+      carregar(MESES_DISP.includes(alvo) ? alvo : MESES_DISP.find((m) => m.startsWith(e.target.value + "-")));
+    };
+    const passo = (d) => { const i = MESES_DISP.indexOf(est.dados.mes) + d; if (i >= 0 && i < MESES_DISP.length) carregar(MESES_DISP[i]); };
+    $("mes-ant").onclick = () => passo(1);
+    $("mes-prox").onclick = () => passo(-1);
+    await carregar(MESES_DISP.includes(hm) ? hm : MESES_DISP[0]);
   }
   iniciar().catch((e) => { document.querySelector("main").prepend(el("div", { class: "aviso", text: "Não foi possível carregar os dados: " + e })); });
 })();
