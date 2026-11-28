@@ -3,6 +3,8 @@
 (function () {
   "use strict";
   // ordem do menos ao mais arriscado
+  // câmbio: alta ou queda não é ganho nem perda em si; o número fica sem a cor de "negativo"
+  const SEM_SINAL = new Set(["ptax"]);
   const CLASSES = ["RF Baixa Duração", "Renda Fixa", "Multimercados", "Ações"];
   const CORES = { "RF Baixa Duração": "#5aa0e6", "Renda Fixa": "#1f4e8c", "Multimercados": "#d08c00", "Ações": "#2a8f62" };
   const VISOES = [["geral", "Visão geral"], ["destaque", "A palavra do Especialista"], ["indicadores", "Indicadores"], ["classe", "Por classe"],
@@ -329,7 +331,7 @@
       if (!i) continue;
       const v = i[per];
       const card = el("button", { type: "button", class: "card", "aria-describedby": "dica" },
-        el("div", { class: "nome", text: i.nome }), el("div", { class: "valor" + (v < 0 ? " neg" : ""), text: pct(v) }),
+        el("div", { class: "nome", text: i.nome }), el("div", { class: "valor" + (v < 0 && !SEM_SINAL.has(id) ? " neg" : ""), text: pct(v) }),
         el("div", { class: "det", text: i.fonte }));
       const comp = (bloco().comparacoes || {})[id];
       const auto2 = [];
@@ -727,7 +729,7 @@
       for (const i of is) {
         const t = el("table", { class: "mini-tab" });
         t.append(el("thead", {}, el("tr", {}, ...PERIODOS.map(([p, n]) => el("th", { scope: "col", class: p === per ? "atual" : "", text: n })))));
-        t.append(el("tbody", {}, el("tr", {}, ...PERIODOS.map(([p]) => el("td", { class: (i[p] < 0 ? "neg " : "") + (p === per ? "atual" : ""), text: num(i[p]) })))));
+        t.append(el("tbody", {}, el("tr", {}, ...PERIODOS.map(([p]) => el("td", { class: (i[p] < 0 && !SEM_SINAL.has(i.id) ? "neg " : "") + (p === per ? "atual" : ""), text: num(i[p]) })))));
         grade.append(el("div", { class: "ind-card" }, el("div", { class: "ind-nome", text: i.nome }), t,
           el("div", { class: "ind-fonte", text: i.fonte })));
       }
