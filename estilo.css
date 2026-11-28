@@ -9,17 +9,18 @@ a{color:var(--azul)}a:hover{color:var(--azul-esc)}
 .topo-linha{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
 .marca{font-family:'Space Grotesk',Inter,sans-serif;font-size:28px;font-weight:700;letter-spacing:-.5px}
 .sub{font-size:14px;color:var(--claro)}
-.topo-dir{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
-.produzido{display:flex;align-items:center;gap:10px;padding-right:12px;border-right:1px solid #3b4a60;font-size:12px;color:var(--claro)}
-.produzido img{height:28px;width:auto;display:block}
+.produzido{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--claro)}
+.produzido img{height:38px;width:auto;display:block}
+@media (max-width:640px){.produzido img{height:32px}}
 .logo-claro{background:#fff;border-radius:6px;padding:4px 8px;display:flex}
-.data-base{font-size:13px;display:flex;gap:8px;align-items:center}
-.data-base select{font-size:14px;padding:8px 10px;border-radius:6px;border:1px solid #3b4a60;background:#16253b;color:#fff;min-height:44px}
+.data-base{font-size:13px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid #26364d;color:var(--claro)}
+.data-base .meta-db{opacity:.75}
+.data-base select{font-size:14px;padding:6px 8px;border-radius:6px;border:1px solid #3b4a60;background:#16253b;color:#fff;min-height:40px}
 .sel-data{display:flex;gap:6px;align-items:center}
-.sel-data .seta{min-width:44px;min-height:44px;border-radius:6px;border:1px solid #3b4a60;background:#16253b;color:#fff;font-size:22px;line-height:1;cursor:pointer}
+.sel-data .seta{min-width:40px;min-height:40px;border-radius:6px;border:1px solid #3b4a60;background:#16253b;color:#fff;font-size:22px;line-height:1;cursor:pointer}
 .sel-data .seta:disabled{opacity:.35;cursor:default}
 .sel-data .seta:not(:disabled):hover{background:#22344f}
-@media (max-width:640px){.data-base{flex-wrap:wrap}}
+
 main{display:flex;flex-direction:column;gap:24px;padding-top:24px;padding-bottom:24px}
 .aviso{background:#fff8eb;border:1px solid #e8c48a;border-radius:8px;padding:10px 14px;font-size:14px;color:#6b3d00;font-weight:600}
 .filtros{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
