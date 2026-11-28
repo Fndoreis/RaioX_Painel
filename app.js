@@ -23,6 +23,11 @@
   const bench = (cl = est.classe) => BENCH[cl] || ["cdi", "CDI"];
   const PLURAL = { "Ações": "fundos de ações", "Multimercados": "multimercados", "Renda Fixa": "fundos de renda fixa",
                    "RF Baixa Duração": "fundos de RF baixa duração" };
+  // prévia interna (cópia em /previa/ no painel interno) e endereço do painel público, para comparar os meses
+  const HOMOLOG = document.documentElement.dataset.ambiente === "homologacao";
+  const PUBLICO = "https://fndoreis.github.io/RaioX_Painel/";
+  // medição de visitas (Cloudflare Web Analytics: anônima, sem cookies). Vazio = desligada.
+  const MEDICAO = "";
   const est = { dados: null, visao: "geral", classe: "Multimercados", periodo: "ANO", ranking: "maiores_rent", comp: "cdi",
                 fundos: {}, busca: null, etfs: {}, etfTipo: "Renda variável", etfTodos: false };
   const $ = (id) => document.getElementById(id);
@@ -43,7 +48,8 @@
   function el(tag, attrs, ...filhos) {
     const e = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs || {})) {
-      if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+      // style pelo CSSOM: a prévia (painel interno) tem CSP sem 'unsafe-inline', que barra o atributo style
+      if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (k === "style") e.style.cssText = v; else e.setAttribute(k, v);
     }
     for (const f of filhos) if (f != null) e.append(f);
     return e;
@@ -834,8 +840,28 @@
     });
     $("rodape-gerado").textContent = `Atualizado em ${d.gerado_em}`;
     // modo de teste (MVP): faixa fixa de "em desenvolvimento" no lugar do aviso de prévia
-    $("faixa-teste").hidden = !d.modo_teste;
+    $("faixa-teste").hidden = !d.modo_teste || HOMOLOG;
     $("aviso-previa").hidden = !d.previa || !!d.modo_teste;
+    if (HOMOLOG) faixaHomologacao(d.mes);
+  }
+
+  // ---------- prévia (homologação): só existe dentro do painel interno, com login ----------
+  // A página copiada para /previa/ traz <html data-ambiente="homologacao">; a faixa diz se o mês em tela já está
+  // no painel público e igual à prévia (compara o arquivo do mês dos dois lados).
+  async function faixaHomologacao(mes) {
+    const f = $("faixa-homolog");
+    f.hidden = false;
+    $("homolog-link").hidden = window.top !== window;   // dentro do painel interno a publicação está logo acima
+    const sit = $("homolog-situacao");
+    sit.textContent = "conferindo o painel público…";
+    let txt;
+    try {
+      const [a, b] = await Promise.all([
+        fetch(`dados/${mes}.json`, { cache: "no-cache" }).then((r) => r.text()),
+        fetch(`${PUBLICO}dados/${mes}.json`, { cache: "no-cache" }).then((r) => (r.ok ? r.text() : null))]);
+      txt = b == null ? "ainda NÃO publicado" : a === b ? "publicado, igual a esta prévia" : "publicado numa versão DIFERENTE desta prévia";
+    } catch { txt = "não deu para conferir o painel público"; }
+    if (est.dados && est.dados.mes === mes) sit.textContent = `${nomeMes(mes)}: ${txt}`;
   }
 
   // =====================================================================
@@ -1001,7 +1027,19 @@
     render();
   }
 
+  // visitas: só no painel público de verdade (nunca na prévia nem no computador local), anônimo e sem cookies
+  function medirVisitas() {
+    if (!MEDICAO || HOMOLOG || !/github\.io$/.test(location.hostname)) return;
+    document.getElementById("aviso-medicao").hidden = false;
+    const s = document.createElement("script");
+    s.defer = true;
+    s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+    s.setAttribute("data-cf-beacon", JSON.stringify({ token: MEDICAO, spa: true }));
+    document.head.append(s);
+  }
+
   async function iniciar() {
+    medirVisitas();
     MESES_DISP = (await (await fetch("dados/meses.json", { cache: "no-cache" })).json()).slice().sort().reverse();
     $("sel-mes").onchange = (e) => carregar(e.target.value);
     $("sel-ano").onchange = (e) => {   // mesmo mês no outro ano, se existir; senão o mais recente daquele ano

@@ -82,6 +82,7 @@ button.card:hover,button.card:focus-visible{border-color:var(--azul);outline:non
 .dica{position:absolute;z-index:10;max-width:320px;background:var(--tinta);color:#fff;border-radius:8px;padding:12px 14px;font-size:13px;line-height:19px;box-shadow:0 6px 18px rgba(15,27,45,.25)}
 .dica b{display:block;margin-bottom:4px}
 .neg{color:#9b2c2c}.card.escuro .neg{color:#ffb4ab}
+.faixa-teste.faixa-homolog{background:#5b3fa0}.faixa-homolog a{color:#fff;text-decoration:underline}
 .faixa-teste{position:sticky;top:0;z-index:20;background:#a3302a;color:#fff;text-align:center;font-weight:700;font-size:14px;letter-spacing:.5px;padding:10px 16px}
 .grupo-botoes .botao-destaque{background:#a35c00;border-color:#a35c00;color:#fff;font-weight:600}
 .grupo-botoes .botao-destaque:hover{background:#874c00}
