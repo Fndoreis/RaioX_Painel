@@ -34,7 +34,8 @@
     const s = x < 0 ? "−" : "", a = Math.abs(x);
     if (a >= 1e12) return s + "R$ " + nf(2).format(a / 1e12) + " tri";
     if (a >= 1e9) return s + "R$ " + nf(1).format(a / 1e9) + " bi";
-    return s + "R$ " + nf(1).format(a / 1e6) + " mi";
+    if (a >= 1e6 || a === 0) return s + "R$ " + nf(1).format(a / 1e6) + " mi";
+    return s + "R$ " + nf(0).format(a / 1e3) + " mil";
   }
   const data = (s) => (s ? s.split("-").reverse().join("/") : "—");
   function el(tag, attrs, ...filhos) {
@@ -86,10 +87,12 @@
     const nv = limpar($("visoes"));
     for (const [k, n] of VISOES) {
       const b = el("button", { type: "button", role: "tab", id: "aba-" + k, "aria-controls": "v-" + k,
-                               "aria-selected": String(k === est.visao), class: "aba-" + k, text: n });
+                               "aria-selected": String(k === est.visao), tabindex: k === est.visao ? "0" : "-1",
+                               class: "aba-" + k, text: n });
       b.onclick = () => irPara(k);
       nv.append(b);
     }
+    teclasAbas(nv, (j) => irPara(VISOES[j][0]));
     for (const [k] of VISOES) $("v-" + k).hidden = k !== est.visao;
 
     // classe: filtra "Por classe" e "Risco × retorno"; as outras visões mostram as classes lado a lado
@@ -113,10 +116,25 @@
   function abas(alvo, itens, atual, ao) {
     const a = limpar($(alvo));
     for (const [k, n] of itens) {
-      const b = el("button", { type: "button", role: "tab", "aria-selected": String(k === atual), text: n });
+      const b = el("button", { type: "button", role: "tab", "aria-selected": String(k === atual),
+                               tabindex: k === atual ? "0" : "-1", text: n });
       b.onclick = () => ao(k);
       a.append(b);
     }
+    teclasAbas(a, (j) => ao(itens[j][0]));
+  }
+
+  // setas, Home e End trocam de aba (padrão das abas acessíveis); o foco segue a aba escolhida
+  function teclasAbas(lista, ativar) {
+    lista.onkeydown = async (e) => {
+      const bs = [...lista.querySelectorAll('[role="tab"]')], i = bs.indexOf(document.activeElement);
+      const j = i < 0 ? null : { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: bs.length - 1 }[e.key];
+      if (j == null) return;
+      e.preventDefault();
+      await ativar((j + bs.length) % bs.length);
+      const s = lista.querySelector('[aria-selected="true"]');
+      if (s) s.focus();
+    };
   }
 
   // ---------- dica (passar o mouse / foco) ----------
@@ -286,6 +304,13 @@
   // =====================================================================
   // POR CLASSE
   // =====================================================================
+  // abre a ficha de um fundo (na aba Risco × retorno, que tem a ficha e o fundo marcado no gráfico)
+  function abrirFicha(cnpj) {
+    est.buscaCnpj = cnpj;
+    est.busca = null;
+    irPara("risco");
+  }
+
   function rentabilidade() {
     const t = bloco().total || {}, per = est.periodo, [bid, bnome] = bench(), bi = ind(bid);
     $("rent-rotulo").textContent = `${est.classe} · RENTABILIDADE ${ROT_PER[per]}`;
@@ -344,10 +369,15 @@
     $("rank-manchete").textContent = manchete("ranking_" + est.ranking, auto);
     abas("abas-ranking", RANKINGS, est.ranking, (k) => { est.ranking = k; ranking(); });
     const tab = limpar($("tab-ranking"));
-    cabecalho(tab, ["#", "Fundo", "Gestor", "Rent.", "Vol.", "PL", "Cap. líq.", "Cotistas"], 3);
+    cabecalho(tab, ["Fundo", "Rent.", "Vol.", "PL", "Cap. líq.", "Cotistas"], 1);
     const tb = el("tbody");
     lista.forEach((f, j) => {
-      tb.append(el("tr", {}, td(String(j + 1)), el("td", { text: f.nome, title: f.nome_completo || f.nome }), td(f.gestor || ""),
+      const nome = f.cnpj
+        ? el("button", { type: "button", class: "link-fundo", title: `Abrir a ficha: ${f.nome_completo || f.nome}`, text: f.nome })
+        : el("span", { text: f.nome, title: f.nome_completo || f.nome });
+      if (f.cnpj) nome.onclick = () => abrirFicha(f.cnpj);
+      tb.append(el("tr", {}, el("td", { class: "col-fundo" }, el("span", { class: "pos", text: String(j + 1) }), nome,
+        el("div", { class: "sub", text: f.gestor || "" })),
         tdNum(f.rent, pct, "forte"), tdNum(f.vol), tdNum(f.pl, reais), tdNum(f.capliq, reais), tdNum(f.cotistas, inteiro)));
     });
     tab.append(tb);
@@ -490,6 +520,7 @@
     const per = est.periodo;
     $("risco-rotulo").textContent = `RISCO × RETORNO · ${est.classe} · ${ROT_PER[per]}`;
     const alvo = $("graficos-risco");
+    if (!est.fundos[est.dados.mes]) limpar(alvo).append(el("div", { class: "carregando", role: "status", text: "Carregando os fundos do mês…" }));
     let lista;
     try { lista = await carregarFundos(); } catch (e) { limpar(alvo).append(el("div", { class: "aviso", text: String(e.message || e) })); return; }
     if (est.visao !== "risco") return;
@@ -500,9 +531,18 @@
       dl.dataset.mes = est.dados.mes;
     }
     const inp = $("busca-fundo");
+    if (est.buscaCnpj) {   // pedido pelo ranking ou pelo link (#risco?fundo=CNPJ)
+      const f = lista.find((x) => x.c === est.buscaCnpj);
+      est.buscaCnpj = null;
+      if (f) {
+        est.busca = f; inp.value = `${f.n} · ${f.c}`;
+        if (f.k !== est.classe) { est.classe = f.k; render(); return; }
+        sincronizarLink();
+      }
+    }
     inp.oninput = () => {
       est.busca = acharFundo(lista, inp.value);
-      if (est.busca && est.busca.k !== est.classe) { est.classe = est.busca.k; render(); } else desenharRisco(lista);
+      if (est.busca && est.busca.k !== est.classe) { est.classe = est.busca.k; render(); } else { desenharRisco(lista); sincronizarLink(); }
     };
     desenharRisco(lista);
     tabelaOutliers(lista);
@@ -533,19 +573,20 @@
       ? `${est.classe}: ${inteiro(todos.length)} fundos, dos quais ${inteiro(fora.size)} são valores extremos (outliers)`
       : `${est.classe}: sem fundos com rentabilidade e volatilidade ${NOME_PER[per]}`;
     const med = (blocoDe(cl).total || {}).rent_mediana;
+    const [bid, bnome] = bench(cl), bi = ind(bid), ref = bi && bi[per] != null ? { nome: bnome, v: bi[per] } : null;
     for (const [titulo, pts, extra, marcar] of [["Com todos os fundos", todos, `${inteiro(todos.length)} fundos · outliers em vermelho-claro`, fora],
                                                  ["Sem outliers", sem, `${inteiro(sem.length)} fundos · ${inteiro(fora.size)} retirados`, null]]) {
       const caixa = el("figure", { class: "grafico-risco" });
       caixa.append(el("figcaption", {}, el("b", { text: titulo }), el("span", { class: "nota", text: ` · ${extra} · mediana da classe ${pct(med)}` })));
       if (!pts.length) { caixa.append(el("div", { class: "nota", text: "Sem fundos no período." })); alvo.append(caixa); continue; }
-      caixa.append(dispersao(pts, cl, per, med, achado, marcar, lista));
+      caixa.append(dispersao(pts, cl, per, med, achado, marcar, lista, ref));
       alvo.append(caixa);
     }
   }
 
-  function dispersao(pts, cl, per, med, achado, fora, lista) {
+  function dispersao(pts, cl, per, med, achado, fora, lista, ref) {
     const W = 560, H = 360, m = { e: 58, d: 14, t: 14, b: 40 };
-    const rs = pts.map((p) => p.r).concat(med != null ? [med] : []), vs = pts.map((p) => p.v);
+    const rs = pts.map((p) => p.r).concat(med != null ? [med] : [], ref ? [ref.v] : []), vs = pts.map((p) => p.v);
     let [y0, y1] = [Math.min(...rs), Math.max(...rs)]; const fy = (y1 - y0) * 0.05 || 1; y0 -= fy; y1 += fy;
     // eixo x em escala log (0,01% a 100%+): a RF Baixa Duração fica perto de zero e Ações perto de 30%
     const lx = vs.map(lvol), lx0 = Math.floor(Math.min(...lx) * 2) / 2, lx1 = Math.max(Math.ceil(Math.max(...lx) * 2) / 2, lx0 + 1);
@@ -570,6 +611,12 @@
       svg.append(sv("line", { x1: m.e, x2: W - m.d, y1: Y(med), y2: Y(med), class: "mediana" }));
       svg.append(sv("text", { x: W - m.d - 4, y: Y(med) - 5, "text-anchor": "end", class: "rot-mediana" }, "mediana " + pct(med)));
     }
+    if (ref) {   // referência da classe (CDI, IHFA ou Ibovespa); rótulo do lado oposto ao da mediana
+      const perto = med != null && Math.abs(Y(ref.v) - Y(med)) < 14;
+      svg.append(sv("line", { x1: m.e, x2: W - m.d, y1: Y(ref.v), y2: Y(ref.v), class: "referencia" }));
+      svg.append(sv("text", { x: m.e + 4, y: Y(ref.v) + (perto && Y(ref.v) > Y(med) ? 14 : -5), class: "rot-referencia" },
+        `${ref.nome} ${pct(ref.v)}`));
+    }
     const g = sv("g", { fill: CORES[cl], "fill-opacity": "0.45" });
     const gx = sv("g", { class: "outlier" });
     let destaque = null;
@@ -591,7 +638,7 @@
     svg.addEventListener("mouseout", esconder);
     svg.addEventListener("click", (e) => {
       const j = alvoJ(e); if (j == null) return;
-      $("busca-fundo").value = `${pts[j].f.n} · ${pts[j].f.c}`; est.busca = pts[j].f; desenharRisco(lista);
+      $("busca-fundo").value = `${pts[j].f.n} · ${pts[j].f.c}`; est.busca = pts[j].f; desenharRisco(lista); sincronizarLink();
     });
     return svg;
   }
@@ -646,8 +693,15 @@
     const per = est.periodo, lista = est.dados.indicadores.filter((i) => i[per] != null);
     $("ind-rotulo").textContent = "INDICADORES DE MERCADO · " + ROT_PER[per];
     if (lista.length) {
-      const ord = [...lista].sort((a, b) => b[per] - a[per]), top = ord[0], fim = ord[ord.length - 1];
-      $("ind-manchete").textContent = `${top.nome} lidera ${NOME_PER[per]} (${pct(top[per])}); ${fim.nome} fica na lanterna (${pct(fim[per])})`;
+      // manchete: as classes de fundos contra a referência de cada uma (o painel é de fundos, não de índices)
+      const cmp = CLASSES.map((cl) => { const md = (blocoDe(cl).total || {}).rent_mediana, b = ind(bench(cl)[0]);
+        return { cl, ok: md != null && b && b[per] != null ? md >= b[per] : null }; }).filter((x) => x.ok != null);
+      const e = (l) => l.length > 1 ? l.slice(0, -1).join(", ") + " e " + l[l.length - 1] : l[0];
+      const acima = cmp.filter((x) => x.ok).map((x) => x.cl), abaixo = cmp.filter((x) => !x.ok).map((x) => x.cl);
+      $("ind-manchete").textContent = !cmp.length ? "Indicadores de mercado " + NOME_PER[per]
+        : !abaixo.length ? `Todas as classes de fundos ficaram na referência ou acima dela ${NOME_PER[per]} (mediana dos fundos)`
+        : !acima.length ? `Nenhuma classe de fundos alcançou a sua referência ${NOME_PER[per]} (mediana dos fundos)`
+        : `${e(acima)} ${acima.length > 1 ? "ficaram" : "ficou"} acima da referência ${NOME_PER[per]}; ${e(abaixo)}, abaixo (mediana dos fundos)`;
     } else $("ind-manchete").textContent = "Sem indicadores para o período.";
     const num = (x) => (x == null ? "—" : nf(2).format(x).replace("-", "−"));
 
@@ -880,6 +934,8 @@
     if (m && m !== MESES_DISP[0]) q.push("mes=" + m);
     if (COM_CLASSE.has(est.visao)) q.push("classe=" + SLUG_CL[est.classe]);
     if (COM_PERIODO.has(est.visao)) q.push("periodo=" + SLUG_PER[est.periodo]);
+    const fc = est.visao === "risco" && (est.busca ? est.busca.c : est.buscaCnpj);
+    if (fc) q.push("fundo=" + fc);
     return "#" + est.visao + (q.length ? "?" + q.join("&") : "");
   }
   function sincronizarLink() {
@@ -895,13 +951,16 @@
     const [v, antigo] = cam.split("/");
     const p = new URLSearchParams(qs || "");
     return { visao: VISOES.some(([k]) => k === v) ? v : "geral", mes: p.get("mes") || antigo || null,
-             classe: deSlug(SLUG_CL, p.get("classe")), periodo: deSlug(SLUG_PER, p.get("periodo")) };
+             classe: deSlug(SLUG_CL, p.get("classe")), periodo: deSlug(SLUG_PER, p.get("periodo")),
+             fundo: /^\d{14}$/.test(p.get("fundo") || "") ? p.get("fundo") : null };
   }
   async function aplicarLink() {
     const l = lerLink();
     est.visao = l.visao;
     if (l.classe) est.classe = l.classe;
     if (l.periodo) est.periodo = l.periodo;
+    if (l.fundo && (!est.busca || est.busca.c !== l.fundo)) { est.buscaCnpj = l.fundo; est.busca = null; }
+    if (!l.fundo && est.busca) { est.busca = null; $("busca-fundo").value = ""; }
     const mes = MESES_DISP.includes(l.mes) ? l.mes : MESES_DISP[0];
     aplicando = true;
     try {

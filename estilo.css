@@ -53,16 +53,19 @@ button.card:hover,button.card:focus-visible{border-color:var(--azul);outline:non
 .card.escuro{background:var(--tinta);color:#fff;border-color:var(--tinta)}
 .card .nome{font-size:13px;color:var(--cinza)}.card.escuro .nome,.card.escuro .det{color:var(--claro)}
 .card .valor{font-family:'Space Grotesk',Inter,sans-serif;font-size:30px;font-weight:700}
-.card .det{font-size:12px;color:var(--cinza)}
+.card .det{font-size:13px;color:var(--cinza)}
 .duas-colunas{display:flex;flex-wrap:wrap;gap:24px}
 .larga{flex:999 1 560px;min-width:0}.estreita{flex:1 1 320px;min-width:0}
 .abas{display:flex;flex-wrap:wrap;gap:6px}
 .abas button{font:inherit;font-size:13px;padding:8px 12px;min-height:40px;border-radius:999px;border:1px solid #c3ccd8;background:#fff;color:var(--tinta);cursor:pointer}
 .abas button[aria-selected=true]{background:var(--tinta);border-color:var(--tinta);color:#fff}
 .rolagem{overflow-x:auto}
+/* primeira coluna fixa ao rolar a tabela para o lado (celular) */
+.rolagem .tabela th:first-child,.rolagem .tabela td:first-child{position:sticky;left:0;background:#fff;z-index:1}
+.rolagem .tabela td:first-child{box-shadow:inset -1px 0 0 var(--linha)}
 .tabela{width:100%;border-collapse:collapse;font-size:14px}
 #tab-ranking{min-width:640px}
-.tabela th{text-align:left;color:var(--cinza);font-size:12px;font-weight:600;padding:8px 6px;border-bottom:1px solid var(--borda)}
+.tabela th{text-align:left;color:var(--cinza);font-size:13px;font-weight:600;padding:8px 6px;border-bottom:1px solid var(--borda)}
 .tabela td{padding:8px 6px;border-bottom:1px solid var(--linha)}
 .tabela .num{text-align:right;white-space:nowrap}.tabela .forte{font-weight:600}
 .tabela.compacta{font-size:13px}
@@ -75,7 +78,7 @@ button.card:hover,button.card:focus-visible{border-color:var(--azul);outline:non
 .logo-grande{height:44px;width:auto;display:block}.logo-medio{height:32px;width:auto;display:block}
 .fundo-escuro{background:var(--tinta);border-radius:6px;padding:8px 12px;align-self:flex-start;display:inline-flex}
 .metodologia p{margin:0 0 10px 0}
-.rodape{font-size:12px;line-height:18px;color:var(--cinza);border-top:1px solid var(--borda);padding-top:12px;padding-bottom:32px}
+.rodape{font-size:13px;line-height:19px;color:var(--cinza);border-top:1px solid var(--borda);padding-top:12px;padding-bottom:32px}
 .dica{position:absolute;z-index:10;max-width:320px;background:var(--tinta);color:#fff;border-radius:8px;padding:12px 14px;font-size:13px;line-height:19px;box-shadow:0 6px 18px rgba(15,27,45,.25)}
 .dica b{display:block;margin-bottom:4px}
 .neg{color:#9b2c2c}.card.escuro .neg{color:#ffb4ab}
@@ -126,6 +129,14 @@ button.card:hover,button.card:focus-visible{border-color:var(--azul);outline:non
 .dispersao .titulo-eixo{font-size:11px;fill:var(--cinza);font-weight:600}
 .dispersao .mediana{stroke:#c0392b;stroke-width:1.5;stroke-dasharray:6 4}
 .dispersao .rot-mediana{font-size:11px;fill:#c0392b;font-weight:600}
+.dispersao .referencia{stroke:var(--azul);stroke-width:1.5}
+.dispersao .rot-referencia{font-size:11px;fill:var(--azul);font-weight:600}
+.carregando{padding:40px 12px;text-align:center;color:var(--cinza);font-size:14px}
+.col-fundo{min-width:190px}
+.col-fundo .pos{float:left;min-width:22px;color:var(--cinza);font-variant-numeric:tabular-nums}
+.link-fundo{display:block;margin-left:22px;background:none;border:0;padding:0;font:inherit;color:var(--azul);font-weight:600;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--claro);text-underline-offset:3px}
+.link-fundo:hover{text-decoration-color:var(--azul)}
+.col-fundo .sub{padding-left:22px}
 .dispersao circle{cursor:pointer}.dispersao circle:hover{fill-opacity:1;stroke:#000}
 .dispersao .achado{fill:#c0392b;fill-opacity:1;stroke:#fff;stroke-width:2.5}
 .grafico-barras{display:flex;flex-direction:column;gap:4px}
@@ -170,7 +181,7 @@ h3.grupo-titulo{margin:12px 0 8px}
 .mini-tab th{background:var(--tinta);color:#fff;font-weight:600;font-size:11px;padding:5px 2px;border-right:1px solid #3b4a60}
 .mini-tab th.atual{background:var(--azul)}
 .mini-tab td{padding:7px 2px;border-bottom:1px solid var(--linha)}
-.ind-fonte{font-size:11px;color:var(--cinza);text-align:center}
+.ind-fonte{font-size:12.5px;color:var(--cinza);text-align:center}
 /* --- Risco × retorno com e sem outliers --- */
 .dispersao .outlier circle{fill:#d9534f;fill-opacity:.55}
 .tabela th.grupo-col{text-align:center;border-bottom:2px solid var(--azul);color:var(--tinta)}
@@ -214,6 +225,7 @@ td.ref-classe{outline:2px solid var(--tinta);outline-offset:-3px;border-radius:4
   .data-base{margin-top:10px;padding-top:8px;flex-wrap:nowrap}.data-base .meta-db{display:none}
   .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .cards>.card.escuro{grid-column:1/-1}
-  .card{padding:12px;gap:4px}.card .valor{font-size:22px}.card .nome{font-size:12px}.card .det{font-size:11.5px}
+  .card{padding:12px;gap:4px}.card .valor{font-size:22px}.card .nome{font-size:12px}.card .det{font-size:12px}
+  .col-fundo{min-width:150px;max-width:170px;font-size:14px}
   .grafico-risco{overflow-x:auto}.grafico-risco .dispersao{min-width:540px}
 }
