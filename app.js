@@ -6,8 +6,8 @@
   const CLASSES = ["RF Baixa Duração", "Renda Fixa", "Multimercados", "Ações"];
   const CORES = { "RF Baixa Duração": "#5aa0e6", "Renda Fixa": "#1f4e8c", "Multimercados": "#d08c00", "Ações": "#2a8f62" };
   const VISOES = [["destaque", "A palavra do Especialista"], ["geral", "Visão geral"], ["indicadores", "Indicadores"], ["classe", "Por classe"],
-                  ["risco", "Risco × retorno"], ["quem", "Quem somos"]];
-  const COM_PERIODO = new Set(["geral", "indicadores", "classe", "risco"]);
+                  ["risco", "Risco × retorno"], ["etfs", "ETFs"], ["quem", "Quem somos"]];
+  const COM_PERIODO = new Set(["geral", "indicadores", "classe", "risco", "etfs"]);
   const COM_CLASSE = new Set(["classe", "risco"]);
   const PERIODOS = [["MES", "Mês"], ["ANO", "Ano"], ["12M", "12 meses"], ["36M", "36 meses"]];
   const NOME_PER = { MES: "no mês", ANO: "no ano", "12M": "em 12 meses", "36M": "em 36 meses" };
@@ -15,10 +15,14 @@
   const RANKINGS = [["maiores_rent", "Maiores rentabilidades"], ["menores_rent", "Menores rentabilidades"],
                     ["maiores_pl", "Maiores PL"], ["maiores_cotistas", "Maiores em cotistas"]];
   const COMPS = [["cdi", "CDI"], ["poupanca", "Poupança"], ["ibovespa", "Ibovespa"], ["ihfa", "IHFA"], ["mediana", "Mediana da classe"]];
+  // referência de cada classe: renda fixa contra o CDI, ações contra o Ibovespa, multimercados contra o IHFA
+  const BENCH = { "RF Baixa Duração": ["cdi", "CDI"], "Renda Fixa": ["cdi", "CDI"], "Multimercados": ["ihfa", "IHFA"],
+                  "Ações": ["ibovespa", "Ibovespa"] };
+  const bench = (cl = est.classe) => BENCH[cl] || ["cdi", "CDI"];
   const PLURAL = { "Ações": "fundos de ações", "Multimercados": "multimercados", "Renda Fixa": "fundos de renda fixa",
                    "RF Baixa Duração": "fundos de RF baixa duração" };
   const est = { dados: null, visao: "destaque", classe: "Multimercados", periodo: "ANO", ranking: "maiores_rent", comp: "cdi",
-                fundos: {}, busca: null };
+                fundos: {}, busca: null, etfs: {}, etfTipo: "Renda variável", etfTodos: false };
   const $ = (id) => document.getElementById(id);
 
   // ---------- formatação pt-BR ----------
@@ -135,16 +139,6 @@
       el("div", { class: "valor" + (/^−/.test(valor) ? " neg" : ""), text: valor }), el("div", { class: "det", text: det }));
   }
 
-  // ---------- leitura do mês ----------
-  function leitura() {
-    const l = est.dados.leitura;
-    $("leitura").hidden = !(l && l.manchete) || est.visao !== "geral";
-    if (!l || !l.manchete) return;
-    $("leitura-manchete").textContent = l.manchete;
-    const ul = limpar($("leitura-bullets"));
-    for (const b of l.bullets || []) ul.append(el("li", { text: b }));
-    $("leitura-assinatura").textContent = l.assinatura || "";
-  }
 
   // =====================================================================
   // VISÃO GERAL
@@ -286,19 +280,18 @@
   // POR CLASSE
   // =====================================================================
   function rentabilidade() {
-    const t = bloco().total || {}, per = est.periodo, cdi = ind("cdi"), ibov = ind("ibovespa");
+    const t = bloco().total || {}, per = est.periodo, [bid, bnome] = bench(), bi = ind(bid);
     $("rent-rotulo").textContent = `${est.classe} · RENTABILIDADE ${ROT_PER[per]}`;
     const md = t.rent_mediana;
     let auto = `${est.classe}: o fundo típico rendeu ${pct(md)} ${NOME_PER[per]}`;
-    if (cdi && cdi[per] != null && md != null) auto += `, ${md >= cdi[per] ? "acima" : "abaixo"} dos ${pct(cdi[per])} do CDI`;
-    if (ibov && ibov[per] != null && md != null) auto += ` e ${md >= ibov[per] ? "acima" : "abaixo"} dos ${pct(ibov[per])} do Ibovespa`;
+    if (bi && bi[per] != null && md != null) auto += `, ${md >= bi[per] ? "acima" : "abaixo"} dos ${pct(bi[per])} do ${bnome}`;
     $("rent-manchete").textContent = manchete("rentabilidade", auto);
 
     const cards = limpar($("cards"));
     cards.append(el("div", { class: "card escuro" }, el("div", { class: "nome", text: est.classe + " (mediana)" }),
       el("div", { class: "valor", text: pct(md) }),
       el("div", { class: "det", text: `${inteiro(t.n_com_rent)} fundos · ponderada ${pct(t.rent_ponderada)} · média ${pct(t.rent_media)}` })));
-    const ids = ["cdi", "poupanca", ...est.dados.classes[est.classe].destaques, "ptax"];
+    const ids = [...new Set([bid, "cdi", "poupanca", ...est.dados.classes[est.classe].destaques, "ptax"])];
     for (const id of ids) {
       const i = ind(id);
       if (!i) continue;
@@ -353,7 +346,9 @@
 
   function comparacao() {
     const per = est.periodo, comps = bloco().comparacoes || {};
-    const disponiveis = COMPS.filter(([k]) => comps[k]);
+    const [bid] = bench();
+    const disponiveis = COMPS.filter(([k]) => comps[k]).sort((a, b) => (b[0] === bid) - (a[0] === bid));
+    if (est.compClasse !== est.classe) { est.comp = bid; est.compClasse = est.classe; }
     if (!disponiveis.find(([k]) => k === est.comp) && disponiveis.length) est.comp = disponiveis[0][0];
     const nomeRef = (COMPS.find((c) => c[0] === est.comp) || ["", ""])[1];
     const c = comps[est.comp] || {}, ac = c.acima || {}, ab = c.abaixo || {};
@@ -625,7 +620,7 @@
     const lin = (rot, fn, fmt = pct) => tb.append(el("tr", {}, td(rot), ...PERIODOS.map(([p]) => tdNum(fn(p), fmt))));
     lin("Rentabilidade", (p) => (f.p[p] || [])[0]);
     lin("Mediana da classe", (p) => ((blocoDe(f.k, p).total) || {}).rent_mediana);
-    lin("CDI", (p) => (ind("cdi") || {})[p]);
+    lin(bench(f.k)[1], (p) => (ind(bench(f.k)[0]) || {})[p]);
     lin("Volatilidade", (p) => (f.p[p] || [])[1]);
     lin("Drawdown", (p) => (f.p[p] || [])[5]);
     lin("Captação líquida", (p) => (f.p[p] || [])[3], reais);
@@ -678,13 +673,97 @@
     }
   }
 
+  // =====================================================================
+  // ETFs (seção própria: fora do universo, dos rankings e das medianas dos fundos)
+  // =====================================================================
+  const TIPO_ETF = { "Renda variável": "Renda variável", "Renda fixa": "Renda fixa", "Criptoativos": "Cripto", "Fundos imobiliários": "FII" };
+  const EM_MOEDA = new Set(["sp500", "gld", "ncis"]);   // índice de referência na moeda própria; o ETF está em reais
+  async function carregarEtfs() {
+    const mes = est.dados.mes;
+    if (!(mes in est.etfs)) {
+      const r = await fetch(`dados/${mes}-etfs.json`, { cache: "no-cache" });
+      est.etfs[mes] = r.ok ? await r.json() : null;
+    }
+    return est.etfs[mes];
+  }
+  const mediana = (v) => { const s = v.filter((x) => x != null).sort((a, b) => a - b); if (!s.length) return null;
+    const m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+
+  async function visaoEtfs() {
+    const per = est.periodo;
+    $("etf-rotulo").textContent = "ETFs LISTADOS NA B3 · " + ROT_PER[per];
+    const d = await carregarEtfs();
+    if (est.visao !== "etfs") return;
+    const grupos = limpar($("etf-grupos")), cards = limpar($("etf-cards"));
+    limpar($("etf-mais")); limpar($("abas-etf"));
+    if (!d) { $("etf-manchete").textContent = "Os ETFs ainda não foram calculados para este mês."; $("etf-nota").textContent = ""; return; }
+    const todos = d.etfs, neg = todos.filter((x) => x.neg);
+    const soma = (l, k) => l.reduce((s, x) => s + (x[k] || 0), 0);
+    $("etf-manchete").textContent = `${inteiro(todos.length)} ETFs listados; ${inteiro(neg.length)} bem negociados no mês, com ${reais(soma(todos, "vm"))} negociados por pregão`;
+    const card = (nome, valor, det) => el("div", { class: "card" }, el("div", { class: "nome", text: nome }), el("div", { class: "valor", text: valor }), el("div", { class: "det", text: det }));
+    cards.append(card("ETFs listados", inteiro(todos.length), d.tipos.map((t) => `${TIPO_ETF[t]} ${todos.filter((x) => x.tipo === t).length}`).join(" · ")),
+      card("Patrimônio", reais(soma(todos, "pl")), "soma do PL informado à CVM"),
+      card("Negociação por pregão", reais(soma(todos, "vm")), "média do mês, todos os ETFs"),
+      card("Bem negociados no mês", inteiro(neg.length), `negócios em ${pct(100 * (d.criterio.min_pregoes_mes || 0.8), 0)} dos pregões e média de ${reais(d.criterio.min_volume_medio || 1e5)}`));
+
+    abas("abas-etf", d.tipos.map((t) => [t, `${TIPO_ETF[t]} (${todos.filter((x) => x.tipo === t).length})`]), est.etfTipo,
+      (t) => { est.etfTipo = t; visaoEtfs(); });
+    let escondidos = 0;
+    for (const g of d.grupos.filter((x) => x.tipo === est.etfTipo)) {
+      const l = todos.filter((x) => x.tipo === g.tipo && x.grupo === g.grupo);
+      const bons = l.filter((x) => x.neg !== false && x.p[per] && x.p[per][0] != null);
+      const sec = el("section", { class: "etf-grupo" }, el("h3", { text: g.grupo }));
+      const ref = [];
+      ref.push(`${inteiro(l.length)} ETFs, ${inteiro(bons.length)} bem negociados com retorno ${NOME_PER[per]}`);
+      if (bons.length) ref.push(`mediana destes: ${pct(mediana(bons.map((x) => x.p[per][0])))}`);
+      const linhaRef = el("div", { class: "etf-ref", text: ref.join(" · ") });
+      const i = g.ref && ind(g.ref);
+      if (i && i[per] != null) linhaRef.append(" · ", el("b", { text: `${i.nome}${EM_MOEDA.has(g.ref) ? " (em moeda própria)" : ""}: ${pct(i[per])}` }));
+      const t = g.classe && (blocoDe(g.classe, per).total || {}).rent_mediana;
+      if (t != null) linhaRef.append(" · ", el("b", { text: `mediana dos ${PLURAL[g.classe]}: ${pct(t)}` }));
+      sec.append(linhaRef);
+      const temR = (x) => (x.p[per] && x.p[per][0] != null ? 1 : 0);
+      // neg: true = negociado, false = pouco negociado, null = cota patrimonial (liquidez de bolsa não medida)
+      const nv = (x) => (x.neg === true ? 2 : x.neg === null ? 1 : 0);
+      const vis = l.filter((x) => est.etfTodos || x.neg !== false).sort((a, b) => (nv(b) - nv(a)) || (temR(b) - temR(a)) || ((b.vm || 0) - (a.vm || 0)));
+      escondidos += l.length - vis.length;
+      if (vis.length) {
+        const tab = el("table", { class: "tabela compacta" });
+        cabecalho(tab, ["ETF", "Gestor", "Retorno", "Volatilidade", "Negociado por pregão", "Patrimônio"], 2);
+        const tb = el("tbody");
+        for (const x of vis) {
+          const [r, v] = x.p[per] || [null, null];
+          tb.append(el("tr", { class: x.neg === false ? "apagado" : "" },
+            el("td", {}, el("span", { class: "tk", text: x.t }), " ", el("span", { text: x.n }),
+              x.neg === false ? el("div", { class: "sub", text: `pouco negociado: negócios em ${inteiro(x.dn)} de ${inteiro(x.dp)} pregões` })
+                : x.neg === null ? el("div", { class: "sub", text: "retorno pela cota patrimonial (Informe Diário)" }) : null),
+            td(x.g || "—"), tdNum(r), tdNum(v), el("td", { class: "num", text: x.vm ? reais(x.vm) : "—" }), el("td", { class: "num", text: reais(x.pl) })));
+        }
+        tab.append(tb);
+        sec.append(el("div", { class: "rolagem" }, tab));
+      } else sec.append(el("div", { class: "nota", text: "Nenhum ETF bem negociado neste grupo no mês." }));
+      grupos.append(sec);
+    }
+    if (escondidos || est.etfTodos) {
+      const b = el("button", { type: "button", class: "botao-link",
+        text: est.etfTodos ? "Mostrar só os bem negociados" : `Mostrar também os ${inteiro(escondidos)} pouco negociados` });
+      b.onclick = () => { est.etfTodos = !est.etfTodos; visaoEtfs(); };
+      $("etf-mais").append(b);
+    }
+    const cota = todos.some((x) => x.tipo === est.etfTipo && x.neg === null);
+    $("etf-nota").textContent = "Retorno pelo preço de fechamento na bolsa (rendimentos distribuídos não entram). Volatilidade anualizada dos retornos diários. " +
+      "Negociado por pregão: média do mês. Os ETFs não entram nos números dos fundos." +
+      (cota ? " Os ETFs de renda fixa não estão nas séries históricas da B3: para eles o retorno é o da cota patrimonial, do Informe Diário entregue pelo administrador no Fundos.NET da B3, e a liquidez em bolsa não é medida." : "") +
+      " Veja a nota metodológica.";
+  }
+
   // ---------- rodapé do mês ----------
   function resumo() {
     const d = est.dados, u = d.universo;
     $("resumo-texto").textContent = `Data-base ${data(d.data_base)}. ${inteiro(u.n_fundos)} fundos no universo, com ${reais(u.pl)} de patrimônio e ${inteiro(u.cotistas)} posições de cotistas. Início dos períodos: mês ${data(d.d0.MES)}, ano ${data(d.d0.ANO)}, 12 meses ${data(d.d0["12M"])}, 36 meses ${data(d.d0["36M"])}.`;
     const dl = limpar($("downloads"));
     dl.append("Baixar os dados do mês (CSV): ");
-    ["universo", "consolidados", "rankings", "indicadores"].forEach((n, j) => {
+    ["universo", "consolidados", "rankings", "indicadores"].concat(d.tem_etfs ? ["etfs"] : []).forEach((n, j) => {
       if (j) dl.append(" · ");
       dl.append(el("a", { href: `dados/${d.mes}/${n}.csv`, download: "", text: n }));
     });
@@ -707,9 +786,10 @@
     const tot = (cl, p) => blocoDe(cl, p).total || {};
     const porRent = [...CLASSES].sort((a, b) => (tot(b, "ANO").rent_mediana ?? -1e9) - (tot(a, "ANO").rent_mediana ?? -1e9));
     const porCap = [...CLASSES].sort((a, b) => (tot(b, "MES").capliq ?? 0) - (tot(a, "MES").capliq ?? 0));
-    const acimaCdi = CLASSES.map((cl) => {
-      const c = (blocoDe(cl, "ANO").comparacoes || {}).cdi || {}, a = (c.acima || {}).n_fundos || 0, n = a + ((c.abaixo || {}).n_fundos || 0);
-      return `${cl} ${pct(n ? (100 * a) / n : null, 0)}`;
+    const acimaRef = CLASSES.map((cl) => {
+      const [bid, bnome] = bench(cl);
+      const c = (blocoDe(cl, "ANO").comparacoes || {})[bid] || {}, a = (c.acima || {}).n_fundos || 0, n = a + ((c.abaixo || {}).n_fundos || 0);
+      return `${cl} ${pct(n ? (100 * a) / n : null, 0)} (${bnome})`;
     });
     const im = d.indicadores.filter((i) => i.MES != null).sort((a, b) => b.MES - a.MES);
     const p = [
@@ -718,7 +798,7 @@
       `No ano, o fundo típico (mediana) rendeu ${pct(ga.rent_mediana)} e o real aplicado nos fundos (média ponderada pelo patrimônio) ` +
       `${pct(ga.rent_ponderada)}, contra ${pct(cdi.ANO)} do CDI e ${pct(ibov.ANO)} do Ibovespa. ${porRent[0]} lidera entre as classes, ` +
       `com mediana de ${pct(tot(porRent[0], "ANO").rent_mediana)}; ${porRent[3]} tem a menor, ${pct(tot(porRent[3], "ANO").rent_mediana)}.`,
-      `Parcela de fundos que igualou ou superou o CDI no ano, por classe: ${acimaCdi.join("; ")}.`,
+      `Parcela de fundos que igualou ou superou a referência da classe no ano: ${acimaRef.join("; ")}.`,
       `Na captação do mês, ${porCap[0]} recebeu mais recursos (${reais(tot(porCap[0], "MES").capliq)}), enquanto ` +
       `${porCap[3]} teve o pior saldo (${reais(tot(porCap[3], "MES").capliq)}).`,
     ];
@@ -762,12 +842,13 @@
 
   function render() {
     esconder();
-    botoes(); leitura(); resumo();
+    botoes(); resumo();
     if (est.visao === "destaque") visaoDestaque();
     else if (est.visao === "geral") visaoGeral();
     else if (est.visao === "indicadores") visaoIndicadores();
     else if (est.visao === "classe") { rentabilidade(); ranking(); comparacao(); gestores(); subtipos(); }
     else if (est.visao === "risco") visaoRisco();
+    else if (est.visao === "etfs") visaoEtfs().catch((e) => { $("etf-manchete").textContent = "Não foi possível carregar os ETFs: " + e.message; });
   }
 
   async function carregar(mes) {

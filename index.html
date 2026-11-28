@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilo.css?v=329d917a64">
+<link rel="stylesheet" href="estilo.css?v=fa0adf2e1d">
 </head>
 <body>
 <div id="faixa-teste" class="faixa-teste" role="status" hidden>EM DESENVOLVIMENTO · versão de teste com dados não finais · não use para decisões</div>
@@ -41,13 +41,6 @@
     <div class="grupo-botoes" role="group" aria-label="Classe" id="botoes-classe"></div>
     <div class="segmentado" role="group" aria-label="Período" id="botoes-periodo"></div>
   </div>
-
-  <section id="leitura" class="cartao leitura" hidden>
-    <div class="rotulo azul">LEITURA DO MÊS</div>
-    <h2 id="leitura-manchete" class="manchete"></h2>
-    <ul id="leitura-bullets"></ul>
-    <div id="leitura-assinatura" class="nota"></div>
-  </section>
 
   <!-- ===== Visão geral ===== -->
   <div id="v-geral" class="visao" role="tabpanel" aria-labelledby="aba-geral">
@@ -152,6 +145,21 @@
     </section>
   </div>
 
+  <!-- ===== ETFs ===== -->
+  <div id="v-etfs" class="visao" role="tabpanel" aria-labelledby="aba-etfs" hidden>
+    <section class="bloco">
+      <div class="rotulo" id="etf-rotulo"></div>
+      <h2 class="titulo" id="etf-manchete"></h2>
+      <div class="cards" id="etf-cards"></div>
+    </section>
+    <section class="cartao">
+      <div class="abas" role="tablist" aria-label="Tipo de ETF" id="abas-etf"></div>
+      <div id="etf-grupos"></div>
+      <div id="etf-mais"></div>
+      <div class="nota" id="etf-nota"></div>
+    </section>
+  </div>
+
   <!-- ===== Indicadores ===== -->
   <div id="v-indicadores" class="visao" role="tabpanel" aria-labelledby="aba-indicadores" hidden>
     <section class="cartao" id="indicadores">
@@ -214,6 +222,7 @@
       <p><b>Períodos.</b> Data-base é o último dia útil do mês. Mês: desde o último dia útil do mês anterior. Ano: desde o último dia útil do ano anterior. 12 e 36 meses: desde o último dia útil do mesmo mês, 1 e 3 anos antes.</p>
       <p><b>Cálculos.</b> Rentabilidade pela variação da cota. Poupança: rendimento acumulado dos depósitos com aniversário no dia 1º (Banco Central). Valores extremos (outliers) no gráfico de risco × retorno: fundos cuja rentabilidade ou volatilidade (esta em escala logarítmica) fica a mais de 3 vezes a distância entre o 1º e o 3º quartil, abaixo do 1º quartil ou acima do 3º, por classe e período; o gráfico é mostrado com e sem eles, e os fundos retirados continuam em todas as médias, medianas e rankings. Captação líquida = aplicações − resgates no período. Volatilidade anualizada (desvio-padrão dos retornos diários × √252). A rentabilidade principal de cada classe é a mediana dos fundos; também são mostradas a média ponderada pelo patrimônio e a média simples. Cotistas são posições, não pessoas. Fundos sem cota no início ou no fim do período ficam fora dos rankings daquele período. Drawdown: maior queda da cota em relação ao pico anterior, dentro do período. No gráfico de risco × retorno, para o mês e o ano o eixo de volatilidade usa a volatilidade de 12 meses, porque poucos dias de cota não medem bem o risco. A cota publicada pela CVM não é ajustada por amortizações.</p>
       <p><b>Fontes.</b> Fundos: CVM (cadastro, Informe Diário e Perfil Mensal). CDI, Poupança e dólar: Banco Central. Ibovespa e ISE: B3. IMA, IDA e IHFA: ANBIMA. S&amp;P 500: S&amp;P Dow Jones Indices, via FRED. Nasdaq e cripto (Nasdaq Crypto Index): Nasdaq. Euro Stoxx 50 e Shanghai Composite: STOXX e SSE, via Yahoo Finance. Ouro: NAV do SPDR Gold Shares (GLD), State Street. As variações dos índices são calculadas pela equipe a partir das fontes; os números-índice não são reproduzidos. Os índices ANBIMA são usados como referência de mercado, e a ANBIMA não se responsabiliza pelo seu uso.</p>
+      <p><b>ETFs.</b> Seção à parte: os ETFs não entram no universo, nos rankings nem nas medianas dos fundos. Lista e divisão em renda variável, renda fixa, cripto e FII: B3 (fundos listados). Retorno pela variação do preço de fechamento na bolsa entre o início e o fim do período (mesmas datas dos fundos); rendimentos distribuídos aos cotistas não entram. Preços: séries históricas da B3 (COTAHIST). Os ETFs de renda fixa não estão nesse arquivo: para eles o retorno é o da cota patrimonial, do Informe Diário que o administrador entrega no Fundos.NET da B3, e a liquidez em bolsa não é medida. Patrimônio e gestor: cadastro da CVM. Negociado no mês: negócios em pelo menos 80% dos pregões e volume médio de R$ 100 mil por pregão; os demais aparecem como pouco negociados, porque o preço pode não refletir o valor da cota. Os grupos dentro de cada tipo são definidos pelo nome do índice. Índices internacionais, ouro e cripto de referência estão na moeda do próprio índice, e o ETF, em reais.</p>
       <p><b>Universo de hoje (viés de sobrevivência).</b> Todos os números consideram os fundos que estão no universo na data-base. Fundos encerrados, incorporados ou que ficaram abaixo dos cortes no caminho não entram, e eles costumam ter resultados piores. Em 36 meses, fundos com menos de 3 anos ficam sem rentabilidade. As cotas são líquidas de taxas e brutas de imposto de renda; a Poupança é isenta.</p>
       <p><b>Aviso.</b> Conteúdo informativo. Não é recomendação de investimento. Rentabilidade passada não garante rentabilidade futura.</p>
     </div>
@@ -226,6 +235,6 @@
 
 
 <div id="dica" class="dica" role="tooltip" hidden></div>
-<script src="app.js?v=f78c63d0a1"></script>
+<script src="app.js?v=2651f14d12"></script>
 </body>
 </html>

@@ -168,3 +168,13 @@ h3.grupo-titulo{margin:12px 0 8px}
 .visoes .aba-quem:hover{background:#0b5f53;color:#fff}
 .visoes .aba-quem[aria-selected=true]{background:#0b5f53;color:#fff;box-shadow:0 0 0 3px rgba(15,123,108,.3)}
 @media (max-width:760px){.visoes .aba-quem{margin-left:0}}
+
+/* ETFs */
+.etf-grupo{border-top:1px solid var(--borda);padding-top:14px;margin-top:6px}
+.etf-grupo h3{margin:0 0 4px;font-size:16px}
+.etf-ref{font-size:13px;color:var(--cinza);margin-bottom:8px}
+.etf-ref b{color:var(--tinta);font-weight:600}
+.tabela tr.apagado td{color:var(--cinza)}
+.tabela .tk{font-weight:700;white-space:nowrap}
+.tabela .sub{font-size:12px;color:var(--cinza)}
+.botao-link{font:inherit;font-size:13px;background:none;border:none;color:var(--azul);text-decoration:underline;cursor:pointer;padding:8px 0;min-height:40px}
